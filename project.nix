@@ -1,22 +1,23 @@
 { final, packages, enableIndexing, pkgs, ... }:
 
 let
-  compiler-nix-name = "ghc8107";
+  compiler-nix-name = "ghc928";
   index-state = null;
   buildInputs = with builtins.getAttr compiler-nix-name (pkgs.haskell.packages); [
     hpack
-    cabal-install
     ghc
-    ghcid
-    haskell-language-server
-    markdown-unlit
   ];
+  tools = {
+    cabal = { };
+    haskell-language-server = { };
+    ghcid = { };
+  };
 in
 final.haskell-nix.cabalProject' {
   inherit compiler-nix-name index-state;
   src = ./.;
   shell = {
-    inherit packages;
+    inherit packages tools;
     additional =
       if enableIndexing != "" && builtins.fromJSON enableIndexing
       then packages else _: [ ];
