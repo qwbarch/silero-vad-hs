@@ -1,0 +1,63 @@
+name: SileroVAD
+version: 0.1.0.0
+tested-with: GHC == 8.10.7
+
+library:
+  source-dirs: src
+
+executables:
+  hello-project:
+    main: Main.hs
+    source-dirs:
+      - src
+      - app
+
+tests:
+  test:
+    main: Main.hs
+    source-dirs:
+      - src
+      - test
+    dependencies:
+      - tasty
+      - tasty-hunit
+
+ghc-options:
+  -threaded
+  -rtsopts
+  -with-rtsopts=-N
+  -O2
+  -flate-specialise
+  -fspecialise-aggressively
+  -Wall
+  -Wno-name-shadowing
+  -Werror
+
+default-extensions:
+  - DataKinds
+  - DeriveAnyClass
+  - DeriveGeneric
+  - DerivingStrategies
+  - DuplicateRecordFields
+  - EmptyDataDecls
+  - ExplicitNamespaces
+  - FlexibleContexts
+  - GeneralizedNewtypeDeriving
+  - LambdaCase
+  - MultiParamTypeClasses
+  - NegativeLiterals
+  - NumericUnderscores
+  - OverloadedLabels
+  - OverloadedStrings
+  - PolyKinds
+  - QuasiQuotes
+  - RankNTypes
+  - ScopedTypeVariables
+  - StrictData
+  - TemplateHaskell
+  - TypeApplications
+  - TypeOperators
+
+dependencies:
+  - base >= 4.16.4 && < 5
+  - wave ^>= 0.2.1
