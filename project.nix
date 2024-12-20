@@ -2,7 +2,7 @@
 
 let
   compiler-nix-name = "ghc8107";
-  index-state = "2023-01-07T00:00:00Z";
+  index-state = null;
   buildInputs = with builtins.getAttr compiler-nix-name (pkgs.haskell.packages); [
     hpack
     cabal-install
