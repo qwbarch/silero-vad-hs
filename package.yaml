@@ -1,16 +1,14 @@
 name: SileroVAD
 version: 0.1.0.0
-tested-with: GHC == 8.10.7
+tested-with: GHC == 9.2.8
 
 library:
   source-dirs: src
-
-executables:
-  hello-project:
-    main: Main.hs
-    source-dirs:
-      - src
-      - app
+  c-sources:
+    - cbits/**/*
+      
+data-files:
+  - lib/onnxruntime/lib/libonnxruntime.so
 
 tests:
   test:
@@ -49,6 +47,7 @@ default-extensions:
   - NumericUnderscores
   - OverloadedLabels
   - OverloadedStrings
+  - OverloadedRecordDot
   - PolyKinds
   - QuasiQuotes
   - RankNTypes
@@ -60,4 +59,5 @@ default-extensions:
 
 dependencies:
   - base >= 4.16.4 && < 5
-  - wave ^>= 0.2.1
+  - unix ^>= 2.8.0.0
+  - directory

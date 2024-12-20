@@ -2,19 +2,18 @@
 
 let
   compiler-nix-name = "ghc928";
-  index-state = null;
-  buildInputs = with builtins.getAttr compiler-nix-name (pkgs.haskell.packages); [
-    hpack
-    ghc
-  ];
   tools = {
     cabal = { };
     haskell-language-server = { };
+    hpack = { };
     ghcid = { };
   };
+  buildInputs = with pkgs; [
+    stdenv.cc.cc
+  ];
 in
 final.haskell-nix.cabalProject' {
-  inherit compiler-nix-name index-state;
+  inherit compiler-nix-name;
   src = ./.;
   shell = {
     inherit packages tools;
@@ -26,6 +25,7 @@ final.haskell-nix.cabalProject' {
     inputsFrom = [{ inherit buildInputs; }];
     shellHook = ''
       export TASTY_COLOR=always
+      export LD_LIBRARY_PATH="lib:${pkgs.stdenv.cc.cc.lib}/lib"
     '';
   };
 }
