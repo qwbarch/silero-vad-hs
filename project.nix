@@ -25,7 +25,6 @@ final.haskell-nix.cabalProject' {
     inputsFrom = [{ inherit buildInputs; }];
     shellHook = ''
       export TASTY_COLOR=always
-      export LD_LIBRARY_PATH="lib:${pkgs.stdenv.cc.cc.lib}/lib"
     '';
   };
 }
