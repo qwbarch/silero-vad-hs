@@ -64,3 +64,10 @@ dependencies:
   - unix ^>= 2.8.0.0
   - directory
   - vector
+  - monad-control
+  - mtl
+  - lifted-base
+  - optics-core
+  - optics-operators
+  - optics-extra
+  - extra

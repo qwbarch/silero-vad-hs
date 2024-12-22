@@ -22,5 +22,6 @@ typedef OrtApiBase *(ORT_API_CALL *OrtGetApiBaseFunc)();
 struct SileroVAD *init_silero(OrtGetApiBaseFunc ortGetApiBase, const char *model_path);
 void release_silero(struct SileroVAD *vad);
 float detect_speech(struct SileroVAD *vad, const size_t sample_length, const float *samples);
+void reset(struct SileroVAD *vad);
 
 #endif

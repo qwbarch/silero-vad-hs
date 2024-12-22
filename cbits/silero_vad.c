@@ -1,9 +1,10 @@
 #include "silero_vad.h"
 
-// 16khz sample rate can only have a window size of 512 in the v5 model.
-#define WINDOW_SIZE 512
 #define STATE_LENGTH 2 * 1 * 128
+#define STATE_BYTES STATE_LENGTH * sizeof(float)
+
 #define CONTEXT_SIZE 64
+#define CONTEXT_BYTES CONTEXT_SIZE * sizeof(float)
 
 // Log level: Error
 #define ORT_LOGGING_LEVEL 3
@@ -28,9 +29,8 @@ struct SileroVAD *init_silero(OrtGetApiBaseFunc ortGetApiBase,
                                 &vad->session);
   (void)vad->api->CreateCpuMemoryInfo(OrtArenaAllocator, OrtMemTypeCPU,
                                       &vad->memory_info);
-  size_t state_bytes = STATE_LENGTH * sizeof(float);
-  vad->state = malloc(state_bytes);
-  memset(vad->state, 0.0f, state_bytes);
+  vad->state = malloc(STATE_BYTES);
+  memset(vad->state, 0.0f, STATE_BYTES);
   vad->input_shape[0] = 1;
   vad->context = NULL;
   return vad;
@@ -53,18 +53,17 @@ float detect_speech(struct SileroVAD *vad, const size_t samples_length,
   if (vad->context == NULL) {
     audio_length = samples_length;
     audio_signal = malloc(audio_length * sizeof(float));
-    vad->context = malloc(CONTEXT_SIZE * sizeof(float));
+    vad->context = malloc(CONTEXT_BYTES);
     memcpy(audio_signal, samples, samples_length * sizeof(float));
-    memset(vad->context, 0, CONTEXT_SIZE * sizeof(float));
+    memset(vad->context, 0, CONTEXT_BYTES);
   } else {
     audio_length = samples_length + CONTEXT_SIZE;
     audio_signal = malloc(audio_length * sizeof(float));
-    memcpy(audio_signal, vad->context, CONTEXT_SIZE * sizeof(float));
+    memcpy(audio_signal, vad->context, CONTEXT_BYTES);
     memcpy(audio_signal + CONTEXT_SIZE, samples,
            samples_length * sizeof(float));
   }
-  memcpy(vad->context, samples + samples_length - CONTEXT_SIZE,
-         CONTEXT_SIZE * sizeof(float));
+  memcpy(vad->context, samples + samples_length - CONTEXT_SIZE, CONTEXT_BYTES);
   vad->input_shape[1] = audio_length;
 
   // Input tensor (containing the pcm data).
@@ -80,7 +79,7 @@ float detect_speech(struct SileroVAD *vad, const size_t samples_length,
       sizeof(state_shape) / sizeof(int64_t),
       ONNX_TENSOR_ELEMENT_DATA_TYPE_FLOAT, &state_tensor);
 
-  // Sample-rate tensor (assumes 16khz).
+  // Sample-rate tensor (16khz sample rate).
   int64_t sample_rate[] = {16000};
   OrtValue *sr_tensor = NULL;
   (void)vad->api->CreateTensorWithDataAsOrtValue(
@@ -114,4 +113,11 @@ float detect_speech(struct SileroVAD *vad, const size_t samples_length,
   free(audio_signal);
 
   return probabilities[0];
+}
+
+void reset(struct SileroVAD *vad) {
+  memset(vad->state, 0.0f, STATE_BYTES);
+  if (vad->context != NULL) {
+    memset(vad->context, 0.0f, CONTEXT_BYTES);
+  }
 }
