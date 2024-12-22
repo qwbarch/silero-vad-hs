@@ -32,6 +32,7 @@ struct SileroVAD *init_silero(OrtGetApiBaseFunc ortGetApiBase,
   vad->state = malloc(state_bytes);
   memset(vad->state, 0.0f, state_bytes);
   vad->input_shape[0] = 1;
+  vad->context = NULL;
   return vad;
 }
 
@@ -44,16 +45,8 @@ void release_silero(struct SileroVAD *vad) {
   free(vad);
 }
 
-float detect_speech(struct SileroVAD *vad, const int64_t pcm_length,
-                    const char *pcm_data) {
-  // Normalize the pcm data.
-  size_t samples_length = pcm_length / 2;
-  float *samples = malloc(samples_length * sizeof(float));
-  for (int i = 0; i < samples_length; i++) {
-    int16_t sample = (int16_t)(pcm_data[i * 2] | pcm_data[i * 2 + 1] << 8);
-    samples[i] = (float)sample / INT16_MAX;
-  }
-
+float detect_speech(struct SileroVAD *vad, const size_t samples_length,
+                    const float *samples) {
   // Add context from previous run.
   size_t audio_length;
   float *audio_signal;
@@ -119,7 +112,6 @@ float detect_speech(struct SileroVAD *vad, const int64_t pcm_length,
   vad->api->ReleaseValue(sr_tensor);
 
   free(audio_signal);
-  free(samples);
 
   return probabilities[0];
 }

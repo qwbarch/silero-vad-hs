@@ -2,7 +2,6 @@
 #define SILERO_VAD_H
 
 #include "../lib/onnxruntime/include/onnxruntime_c_api.h"
-#include <stdio.h>
 
 // Struct for the Silero VAD
 struct SileroVAD {
@@ -22,6 +21,6 @@ typedef OrtApiBase *(ORT_API_CALL *OrtGetApiBaseFunc)();
 // Function prototypes
 struct SileroVAD *init_silero(OrtGetApiBaseFunc ortGetApiBase, const char *model_path);
 void release_silero(struct SileroVAD *vad);
-float detect_speech(struct SileroVAD *vad, const int64_t pcm_length, const char *pcm_data);
+float detect_speech(struct SileroVAD *vad, const size_t sample_length, const float *samples);
 
 #endif

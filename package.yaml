@@ -7,6 +7,7 @@ c-sources: cbits/silero_vad.c
 data-files:
   - lib/onnxruntime/lib/libonnxruntime.so
   - lib/silero-vad/silero_vad.onnx
+  - lib/jfk.wav
 
 library:
   source-dirs: src
@@ -20,6 +21,7 @@ tests:
     dependencies:
       - tasty
       - tasty-hunit
+      - WAVE
 
 ghc-options:
   -threaded
@@ -61,4 +63,4 @@ dependencies:
   - base >= 4.16.4 && < 5
   - unix ^>= 2.8.0.0
   - directory
-  - bytestring
+  - vector

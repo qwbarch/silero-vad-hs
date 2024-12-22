@@ -5,9 +5,8 @@ module Silero.Model (
   detectSpeech,
 ) where
 
-import Data.ByteString (ByteString)
-import qualified Data.ByteString as ByteString
-import Data.ByteString.Unsafe (unsafeUseAsCString)
+import Data.Vector.Storable (Vector)
+import qualified Data.Vector.Storable as Vector
 import Foreign (FunPtr, Ptr)
 import Foreign.C (CString, withCString)
 import Paths_silero_vad (getDataFileName)
@@ -17,7 +16,7 @@ foreign import ccall "silero_vad.h init_silero" c_init_silero :: FunPtr () -> CS
 
 foreign import ccall "silero_vad.h release_silero" c_release_silero :: Ptr () -> IO ()
 
-foreign import ccall "silero_vad.h detect_speech" c_detect_speech :: Ptr () -> Int -> CString -> IO Float
+foreign import ccall "silero_vad.h detect_speech" c_detect_speech :: Ptr () -> Int -> Ptr Float -> IO Float
 
 -- |
 -- Holds state to be used for voice activity detection.
@@ -28,19 +27,18 @@ newtype SileroModel = SileroModel
 
 loadModel :: IO SileroModel
 loadModel = do
-  modelPath <- getDataFileName "lib/silero-vad/silero_vad.onnx"
-  libPath <- getDataFileName "lib/onnxruntime/lib/libonnxruntime.so"
-  dl <- dlopen libPath [RTLD_NOW]
+  dl <- flip dlopen [RTLD_NOW] =<< getDataFileName "lib/onnxruntime/lib/libonnxruntime.so"
   api <- dlsym dl "OrtGetApiBase"
+  modelPath <- getDataFileName "lib/silero-vad/silero_vad.onnx"
   vad <-
     withCString modelPath $
       c_init_silero api
-  pure $ SileroModel vad
+  return $ SileroModel vad
 
 releaseModel :: SileroModel -> IO ()
 releaseModel = c_release_silero . api
 
-detectSpeech :: SileroModel -> ByteString -> IO Float
-detectSpeech model pcmData = do
-  unsafeUseAsCString pcmData $
-    c_detect_speech model.api (ByteString.length pcmData)
+detectSpeech :: SileroModel -> Vector Float -> IO Float
+detectSpeech model samples = do
+  Vector.unsafeWith samples $
+    c_detect_speech model.api (Vector.length samples)
