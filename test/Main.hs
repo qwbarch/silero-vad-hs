@@ -1,4 +1,4 @@
-import Silero.Model (loadModel)
+import Silero.Model (loadModel, releaseModel)
 import Test.Tasty (defaultMain, testGroup)
 import Test.Tasty.HUnit (testCase, (@?=))
 
@@ -7,8 +7,7 @@ main = defaultMain $ testGroup "Project" testTree
   where
     testTree =
       [ testCase "Hello world!" $ do
-          loadModel >>= \case
-            Nothing -> putStrLn "failed to load model"
-            Just _ -> putStrLn "model loaded"
+          model <- loadModel
+          releaseModel model
           () @?= ()
       ]

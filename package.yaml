@@ -1,14 +1,15 @@
-name: SileroVAD
+name: silero-vad
 version: 0.1.0.0
 tested-with: GHC == 9.2.8
 
-library:
-  source-dirs: src
-  c-sources:
-    - cbits/**/*
-      
+include-dirs: cbits
+c-sources: cbits/silero_vad.c
 data-files:
   - lib/onnxruntime/lib/libonnxruntime.so
+  - lib/silero-vad/silero_vad.onnx
+
+library:
+  source-dirs: src
 
 tests:
   test:
@@ -29,7 +30,6 @@ ghc-options:
   -fspecialise-aggressively
   -Wall
   -Wno-name-shadowing
-  -Werror
 
 default-extensions:
   - DataKinds
@@ -61,3 +61,4 @@ dependencies:
   - base >= 4.16.4 && < 5
   - unix ^>= 2.8.0.0
   - directory
+  - bytestring

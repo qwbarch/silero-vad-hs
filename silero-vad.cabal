@@ -4,7 +4,7 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 
-name:           SileroVAD
+name:           silero-vad
 version:        0.1.0.0
 license:        MIT
 license-file:   LICENSE
@@ -13,12 +13,13 @@ tested-with:
     GHC == 9.2.8
 data-files:
     lib/onnxruntime/lib/libonnxruntime.so
+    lib/silero-vad/silero_vad.onnx
 
 library
   exposed-modules:
       Silero.Model
   other-modules:
-      Paths_SileroVAD
+      Paths_silero_vad
   hs-source-dirs:
       src
   default-extensions:
@@ -46,11 +47,14 @@ library
       TemplateHaskell
       TypeApplications
       TypeOperators
-  ghc-options: -threaded -rtsopts -with-rtsopts=-N -O2 -flate-specialise -fspecialise-aggressively -Wall -Wno-name-shadowing -Werror
+  ghc-options: -threaded -rtsopts -with-rtsopts=-N -O2 -flate-specialise -fspecialise-aggressively -Wall -Wno-name-shadowing
+  include-dirs:
+      cbits
   c-sources:
-      cbits/SileroVAD.c
+      cbits/silero_vad.c
   build-depends:
       base >=4.16.4 && <5
+    , bytestring
     , directory
     , unix >=2.8.0.0 && <2.9
   default-language: Haskell2010
@@ -60,7 +64,7 @@ test-suite test
   main-is: Main.hs
   other-modules:
       Silero.Model
-      Paths_SileroVAD
+      Paths_silero_vad
   hs-source-dirs:
       src
       test
@@ -89,9 +93,14 @@ test-suite test
       TemplateHaskell
       TypeApplications
       TypeOperators
-  ghc-options: -threaded -rtsopts -with-rtsopts=-N -O2 -flate-specialise -fspecialise-aggressively -Wall -Wno-name-shadowing -Werror
+  ghc-options: -threaded -rtsopts -with-rtsopts=-N -O2 -flate-specialise -fspecialise-aggressively -Wall -Wno-name-shadowing
+  include-dirs:
+      cbits
+  c-sources:
+      cbits/silero_vad.c
   build-depends:
       base >=4.16.4 && <5
+    , bytestring
     , directory
     , tasty
     , tasty-hunit
