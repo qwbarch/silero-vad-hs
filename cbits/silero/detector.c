@@ -3,31 +3,10 @@
 
 #include "detector.h"
 
-struct VoiceDetector *
-init_detector(struct SileroModel *model, const float start_threshold,
-              const float end_threshold, const int min_speech_samples,
-              const int max_speech_samples, const int speech_pad_samples,
-              const int min_silence_samples,
-              const int min_silence_samples_at_max_speech) {
-  struct VoiceDetector *vad = malloc(sizeof(struct VoiceDetector));
-  vad->model = model;
-  *(float *)&vad->start_threshold = start_threshold;
-  *(float *)&vad->end_threshold = end_threshold;
-  *(int *)&vad->min_speech_samples = min_speech_samples;
-  *(int *)&vad->max_speech_samples = max_speech_samples;
-  *(int *)&vad->speech_pad_samples = speech_pad_samples;
-  *(int *)&vad->min_silence_samples = min_silence_samples;
-  *(int *)&vad->min_silence_samples_at_max_speech =
-      min_silence_samples_at_max_speech;
-  return vad;
-}
-
-void release_detector(struct VoiceDetector *vad) { free(vad); }
-
 /** Split the audio samples into segments of <bold>WINDOW_SIZE</bold> size. */
-struct LinkedList *split_frames(const size_t samples_length,
-                                const float *samples) {
-  struct LinkedList *frames = create_list();
+vec_void_t split_frames(const size_t samples_length, const float *samples) {
+  vec_void_t frames;
+  vec_init(&frames);
   for (int i = 0; i < samples_length; i += WINDOW_SIZE) {
     float *frame = malloc(WINDOW_SIZE_BYTES);
     memset(frame, 0.0f, WINDOW_SIZE_BYTES);
@@ -36,7 +15,7 @@ struct LinkedList *split_frames(const size_t samples_length,
       copy_bytes = WINDOW_SIZE_BYTES - samples_length + i;
     }
     memcpy(frame, &samples[i], WINDOW_SIZE_BYTES);
-    push_list(frames, frame);
+    vec_push(&frames, frame);
   }
   return frames;
 }
@@ -51,32 +30,55 @@ void reset_segment(struct SpeechSegment *segment) {
 int math_min(int a, int b) { return (a < b) ? a : b; }
 int math_max(int a, int b) { return (a > b) ? a : b; }
 
-struct LinkedList *calculate_time(struct LinkedList *original) {
-  struct LinkedList *result = create_list();
-  if (!original || original->length == 0)
+int compare_start_index(const void *a, const void *b) {
+  return ((struct SpeechSegment *)a)->start_index -
+         ((struct SpeechSegment *)b)->start_index;
+}
+
+float calculate_time(int index) {
+  return floorf((float)index / (float)WINDOW_SIZE * 1000.0f) / 1000.0f;
+}
+
+vec_void_t merge_segments(vec_void_t original) {
+  vec_void_t result;
+  vec_init(&result);
+  if (original.length == 0)
     return result;
-  int left = ((struct SpeechSegment *)original->head_node)->start_index;
-  int right = ((struct SpeechSegment *)original->head_node)->end_index;
-  if (original->length > 1) {
+  struct SpeechSegment *first_segment = original.data[0];
+  int left = first_segment->start_index;
+  int right = first_segment->end_index;
+  if (original.length > 1) {
+    vec_sort(&original, compare_start_index);
+    for (int i = 0; i < original.length; i++) {
+      struct SpeechSegment *segment = original.data[i];
+      if (segment->start_index > right) {
+        struct SpeechSegment *updated_segment =
+            malloc(sizeof(struct SpeechSegment));
+        updated_segment->start_index = left;
+        updated_segment->end_index = right;
+        updated_segment->start_time = calculate_time(left);
+        updated_segment->end_time = calculate_time(right);
+        vec_push(&result, updated_segment);
+      }
+    }
   }
-  return NULL;
+  return result;
 }
 
 void detect_segments(struct VoiceDetector *vad, const size_t samples_length,
-                     const float *samples) {
-  struct LinkedList *frames = split_frames(samples_length, samples);
-  reverse_list(frames);
-  struct Node *current_node = frames->head_node;
-  struct LinkedList *segments = create_list();
+                     const float *samples, size_t *out_segments_length,
+                     struct SpeechSegment *out_segments) {
+  vec_void_t frames = split_frames(samples_length, samples);
+  vec_void_t segments;
+  vec_init(&segments);
   bool triggered = false;
-  int i = 0;
   int temp_end = 0;
   int previous_end = 0;
   int next_start = 0;
   struct SpeechSegment *current_segment = malloc(sizeof(struct SpeechSegment));
   reset_segment(current_segment);
-  while (current_node) {
-    float *frame = current_node->value;
+  for (int i = 0; i < frames.length; i++) {
+    float *frame = frames.data[i];
     float probability = detect_speech(vad->model, WINDOW_SIZE, frame);
 
     if (probability >= vad->start_threshold && temp_end != 0) {
@@ -96,7 +98,7 @@ void detect_segments(struct VoiceDetector *vad, const size_t samples_length,
                          vad->max_speech_samples) {
       if (previous_end != 0) {
         current_segment->end_index = previous_end;
-        push_list(segments, current_segment);
+        vec_push(&segments, current_segment);
         current_segment = malloc(sizeof(struct SpeechSegment));
         if (next_start < previous_end) {
           triggered = false;
@@ -108,7 +110,7 @@ void detect_segments(struct VoiceDetector *vad, const size_t samples_length,
         temp_end = 0;
       } else {
         current_segment->end_index = WINDOW_SIZE * i;
-        push_list(segments, current_segment);
+        vec_push(&segments, current_segment);
         current_segment = malloc(sizeof(struct SpeechSegment));
         previous_end = 0;
         next_start = 0;
@@ -132,7 +134,7 @@ void detect_segments(struct VoiceDetector *vad, const size_t samples_length,
         current_segment->end_index = temp_end;
         if (current_segment->end_index - current_segment->start_index >
             vad->min_silence_samples) {
-          push_list(segments, current_segment);
+          vec_push(&segments, current_segment);
           current_segment = malloc(sizeof(struct SpeechSegment));
         }
         reset_segment(current_segment);
@@ -145,25 +147,23 @@ void detect_segments(struct VoiceDetector *vad, const size_t samples_length,
     }
 
     free(frame);
-    current_node = pop_list(frames);
   }
+  vec_deinit(&frames);
 
   if (current_segment->start_index >= 0 &&
       WINDOW_SIZE - current_segment->start_index > vad->min_speech_samples) {
     current_segment->end_index = WINDOW_SIZE;
-    push_list(segments, current_segment);
+    vec_push(&segments, current_segment);
   }
 
-  reverse_list(segments);
-  i = 0;
-  while (current_node) {
-    current_segment = current_node->value;
+  for (int i = 0; i < segments.length; i++) {
+    current_segment = segments.data[i];
     if (i == 0) {
       current_segment->start_index =
           math_max(0, current_segment->start_index - vad->speech_pad_samples);
     }
-    if (i != segments->length - 1) {
-      struct SpeechSegment *next_segment = segments->head_node->value;
+    if (i != segments.length - 1) {
+      struct SpeechSegment *next_segment = segments.data[i + 1];
       int silence_duration =
           next_segment->start_index - current_segment->end_index;
       if (silence_duration < vad->speech_pad_samples * 2) {
@@ -180,7 +180,26 @@ void detect_segments(struct VoiceDetector *vad, const size_t samples_length,
       current_segment->end_index = math_min(
           WINDOW_SIZE, current_segment->end_index + vad->speech_pad_samples);
     }
-    current_node = current_node->next_node;
-    i++;
   }
+
+  vec_void_t vec_result = merge_segments(segments);
+  size_t result_bytes = vec_result.length * sizeof(struct SpeechSegment);
+  struct SpeechSegment *result = malloc(result_bytes);
+  memcpy(result, vec_result.data, result_bytes);
+
+  if (current_segment) {
+    free(current_segment);
+  }
+
+  *out_segments_length = vec_result.length;
+  out_segments = result;
+
+  for (int i = 0; i < segments.length; i++) {
+    free(segments.data[i]);
+  }
+  for (int i = 0; i < vec_result.length; i++) {
+    free(vec_result.data[i]);
+  }
+  vec_deinit(&segments);
+  vec_deinit(&vec_result);
 }
