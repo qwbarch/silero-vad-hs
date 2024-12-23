@@ -52,7 +52,11 @@ library
   include-dirs:
       cbits
   c-sources:
-      cbits/silero_vad.c
+      cbits/linked_list.h
+      cbits/silero/detector.c
+      cbits/silero/detector.h
+      cbits/silero/model.c
+      cbits/silero/model.h
   build-depends:
       base >=4.16.4 && <5
     , directory
@@ -98,7 +102,11 @@ test-suite test
   include-dirs:
       cbits
   c-sources:
-      cbits/silero_vad.c
+      cbits/linked_list.h
+      cbits/silero/detector.c
+      cbits/silero/detector.h
+      cbits/silero/model.c
+      cbits/silero/model.h
   build-depends:
       WAVE
     , base >=4.16.4 && <5
