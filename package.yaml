@@ -3,7 +3,7 @@ version: 0.1.0.0
 tested-with: GHC == 9.2.8
 
 include-dirs: cbits
-c-sources: cbits/silero_vad.c
+c-sources: cbits/**/*
 data-files:
   - lib/onnxruntime/lib/libonnxruntime.so
   - lib/silero-vad/silero_vad.onnx

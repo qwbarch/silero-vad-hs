@@ -12,9 +12,9 @@ import Foreign.C (CString, withCString)
 import Paths_silero_vad (getDataFileName)
 import System.Posix (RTLDFlags (RTLD_NOW), dlopen, dlsym)
 
-foreign import ccall "silero_vad.h init_silero" c_init_silero :: FunPtr () -> CString -> IO (Ptr ())
+foreign import ccall "silero_vad.h load_model" c_load_model :: FunPtr () -> CString -> IO (Ptr ())
 
-foreign import ccall "silero_vad.h release_silero" c_release_silero :: Ptr () -> IO ()
+foreign import ccall "silero_vad.h release_model" c_release_model :: Ptr () -> IO ()
 
 foreign import ccall "silero_vad.h detect_speech" c_detect_speech :: Ptr () -> Int -> Ptr Float -> IO Float
 
@@ -32,11 +32,11 @@ loadModel = do
   modelPath <- getDataFileName "lib/silero-vad/silero_vad.onnx"
   vad <-
     withCString modelPath $
-      c_init_silero api
+      c_load_model api
   return $ SileroModel vad
 
 releaseModel :: SileroModel -> IO ()
-releaseModel = c_release_silero . api
+releaseModel = c_release_model . api
 
 detectSpeech :: SileroModel -> Vector Float -> IO Float
 detectSpeech model samples = do
