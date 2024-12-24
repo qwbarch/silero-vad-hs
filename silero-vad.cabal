@@ -53,11 +53,12 @@ library
   include-dirs:
       cbits
   c-sources:
-      cbits/cvector.h
       cbits/silero/detector.c
       cbits/silero/detector.h
       cbits/silero/model.c
       cbits/silero/model.h
+      cbits/vec.c
+      cbits/vec.h
   build-depends:
       base >=4.16.4 && <5
     , derive-storable
@@ -105,11 +106,12 @@ test-suite test
   include-dirs:
       cbits
   c-sources:
-      cbits/cvector.h
       cbits/silero/detector.c
       cbits/silero/detector.h
       cbits/silero/model.c
       cbits/silero/model.h
+      cbits/vec.c
+      cbits/vec.h
   build-depends:
       WAVE
     , base >=4.16.4 && <5

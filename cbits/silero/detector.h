@@ -5,7 +5,7 @@
 #include <stdio.h>
 #include <math.h>
 #include "model.h"
-#include "../cvector.h"
+#include "../vec.h"
 
 struct SpeechSegment {
   int start_index;

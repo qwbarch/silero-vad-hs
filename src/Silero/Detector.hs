@@ -79,32 +79,16 @@ detectSegments vad (SileroModel model) samples = do
       segments <-
         c_detect_segments
           model
-          -- (realToFrac vad . startThreshold)
-          undefined
-          undefined
-          undefined
-          undefined
-          undefined
-          undefined
-          undefined
-          undefined
-          undefined
-          undefined
-      --  vad
-      -- . endThreshold
-      --   vad
-      -- . minSpeechSamples
-      --   vad
-      -- . maxSpeechSamples
-      --   vad
-      -- . speechPadSamples
-      --   vad
-      -- . minSilenceSamples
-      --   vad
-      -- . minSilenceSamplesAtMaxSpeech
-      --  (Vector.length samples)
-      --  samplesPtr
-      --  segmentsLengthPtr
+          (realToFrac vad.startThreshold)
+          vad.endThreshold
+          vad.minSpeechSamples
+          vad.maxSpeechSamples
+          vad.speechPadSamples
+          vad.minSilenceSamples
+          vad.minSilenceSamplesAtMaxSpeech
+          (Vector.length samples)
+          samplesPtr
+          segmentsLengthPtr
       putStrLn "after c_detect_segments"
       samplesLength <- peek segmentsLengthPtr
       peekArray
