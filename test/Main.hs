@@ -2,7 +2,7 @@ import Data.Function ((&))
 import Data.Int (Int32)
 import Data.Vector.Storable (Vector)
 import qualified Data.Vector.Storable as Vector
-import Data.WAVE (WAVE (..), WAVESample, getWAVEFile)
+import Data.WAVE (WAVE (..), WAVESample, getWAVEFile, sampleToDouble)
 import Paths_silero_vad (getDataFileName)
 import Silero.Detector (VoiceDetector (..), defaultVad, detectSegments)
 import Silero.Model (detectSpeech, loadModel, releaseModel, windowSize)
@@ -21,8 +21,7 @@ main = defaultMain $ testGroup "Project" testTree
               samples =
                 concat wav.waveSamples
                   & Vector.fromList
-                  & Vector.map (\sample -> abs $ fromIntegral sample / fromIntegral (maxBound :: WAVESample))
-              xs = Vector.take (round @Float $ 16000.0 * 0.02) samples
+                  & Vector.map (realToFrac . sampleToDouble)
 
           -- print defaultVad
           print windowSize

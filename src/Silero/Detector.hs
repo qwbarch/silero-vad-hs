@@ -7,13 +7,14 @@ module Silero.Detector (
 import Control.Applicative (Applicative (liftA2))
 import Control.Exception (bracket, finally)
 import Control.Monad (join)
+import Data.Int (Int32)
 import Data.Vector.Storable (Storable, Vector)
 import qualified Data.Vector.Storable as Vector
 import Foreign (Ptr, Storable (..), free, malloc, nullPtr, peekArray)
-import Foreign.C (CFloat (..))
+import Foreign.C (CFloat (..), CInt)
+import Foreign.Storable.Generic (GStorable)
+import GHC.Generics (Generic)
 import Silero.Model (SileroModel (SileroModel), windowSize)
-import TH.Derive (Deriving, derive)
-import TH.Derive.Storable ()
 
 data VoiceDetector = VoiceDetector
   { startThreshold :: Float
@@ -43,14 +44,12 @@ defaultVad =
     speechPadSamples = sampleRate / 1000.0 * 30.0 -- 30ms.
 
 data SpeechSegment = SpeechSegment
-  { startIndex :: Int
-  , endIndex :: Int
-  , startTime :: Float
-  , endTime :: Float
+  { startIndex :: Int32
+  , endIndex :: Int32
+  , startTime :: CFloat
+  , endTime :: CFloat
   }
-  deriving (Show, Read, Eq, Ord)
-
-$($(derive [d|instance Deriving (Storable SpeechSegment)|]))
+  deriving (Show, Read, Eq, Ord, Generic, GStorable)
 
 foreign import ccall "detector.h detect_segments"
   c_detect_segments ::
@@ -65,8 +64,7 @@ foreign import ccall "detector.h detect_segments"
     Int -> -- samplesLength
     Ptr Float -> -- samples
     Ptr Int -> -- outSegmentsLength
-    Ptr SpeechSegment -> -- outSegments
-    IO ()
+    IO (Ptr SpeechSegment)
 
 detectSegments :: VoiceDetector -> SileroModel -> Vector Float -> IO [SpeechSegment]
 detectSegments vad (SileroModel model) samples = do
@@ -75,10 +73,10 @@ detectSegments vad (SileroModel model) samples = do
       withPtr = bracket (malloc @a) free
 
   Vector.unsafeWith samples $ \samplesPtr ->
-    withPtr @Int $ \segmentsLengthPtr ->
-      withPtr @SpeechSegment $ \segmentsPtr -> do
-        poke samplesPtr 0
-        putStrLn "before c_detect_segments"
+    withPtr @Int $ \segmentsLengthPtr -> do
+      poke samplesPtr 0
+      putStrLn "before c_detect_segments"
+      segments <-
         c_detect_segments
           model
           (realToFrac vad.startThreshold)
@@ -91,12 +89,8 @@ detectSegments vad (SileroModel model) samples = do
           (Vector.length samples)
           samplesPtr
           segmentsLengthPtr
-          segmentsPtr
-        putStrLn "after c_detect_segments"
-        x <- peek segmentsLengthPtr
-        putStrLn $ "segments length: " <> show x
-        join $
-          liftA2
-            peekArray
-            (peek segmentsLengthPtr)
-            (pure segmentsPtr)
+      putStrLn "after c_detect_segments"
+      samplesLength <- peek segmentsLengthPtr
+      peekArray
+        samplesLength
+        segments

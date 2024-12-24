@@ -65,15 +65,14 @@ vec_void_t merge_segments(vec_void_t original) {
   return result;
 }
 
-void detect_segments(struct SileroModel *model, const float start_threshold,
-                     const float end_threshold, const float min_speech_samples,
-                     const float max_speech_samples,
-                     const float speech_pad_samples,
-                     const float min_silence_samples,
-                     const float min_silence_samples_at_max_speech,
-                     const size_t samples_length, const float *samples,
-                     size_t *out_segments_length,
-                     struct SpeechSegment *out_segments) {
+struct SpeechSegment *
+detect_segments(struct SileroModel *model, const float start_threshold,
+                const float end_threshold, const float min_speech_samples,
+                const float max_speech_samples, const float speech_pad_samples,
+                const float min_silence_samples,
+                const float min_silence_samples_at_max_speech,
+                const size_t samples_length, const float *samples,
+                size_t *out_segments_length) {
   vec_void_t frames = split_frames(samples_length, samples);
   vec_void_t segments;
   vec_init(&segments);
@@ -189,7 +188,7 @@ void detect_segments(struct SileroModel *model, const float start_threshold,
 
   vec_void_t vec_result = merge_segments(segments);
   size_t result_bytes = vec_result.length * sizeof(struct SpeechSegment);
-  out_segments = malloc(result_bytes);
+  struct SpeechSegment *out_segments = calloc(1, result_bytes);
   memcpy(out_segments, vec_result.data, result_bytes);
   *out_segments_length = vec_result.length;
 
@@ -199,4 +198,5 @@ void detect_segments(struct SileroModel *model, const float start_threshold,
 
   vec_deinit(&segments);
   vec_deinit(&vec_result);
+  return out_segments;
 }

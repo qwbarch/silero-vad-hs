@@ -64,4 +64,4 @@ dependencies:
   - unix ^>= 2.8.0.0
   - directory
   - vector
-  - th-utilities
+  - derive-storable

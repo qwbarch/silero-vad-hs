@@ -13,7 +13,7 @@ struct SpeechSegment {
   float end_time;
 };
 
-void detect_segments(
+struct SpeechSegment *detect_segments(
   struct SileroModel *model,
   const float start_threshold,
   const float end_threshold,
@@ -24,8 +24,7 @@ void detect_segments(
   const float min_silence_samples_at_max_speech,
   const size_t samples_length,
   const float *samples,
-  size_t *out_segments_length,
-  struct SpeechSegment *out_segments
+  size_t *out_segments_length
 );
 
 #endif
