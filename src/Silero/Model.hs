@@ -59,4 +59,4 @@ releaseModel = c_release_model . api
 detectSpeech :: SileroModel -> Vector Float -> IO Float
 detectSpeech model samples = do
   Vector.unsafeWith samples $
-    c_detect_speech model.api (Vector.length samples)
+    c_detect_speech (api model) (Vector.length samples)

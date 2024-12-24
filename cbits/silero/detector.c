@@ -2,12 +2,11 @@
 // https://github.com/snakers4/silero-vad/blob/cb25c0c0470cf20d7f33805218831b9620dbb6a7/examples/csharp/SileroVadDetector.cs
 
 #include "detector.h"
-#include <stdio.h>
 
 /** Split the audio samples into segments of <bold>WINDOW_SIZE</bold> size. */
-vec_void_t split_frames(const size_t samples_length, const float *samples) {
-  vec_void_t frames;
-  vec_init(&frames);
+cvector(float *)
+    split_frames(const size_t samples_length, const float *samples) {
+  cvector_vector_type(float *) frames = NULL;
   for (int i = 0; i < samples_length; i += WINDOW_SIZE) {
     float *frame = calloc(WINDOW_SIZE, WINDOW_SIZE_BYTES);
     int copy_bytes = WINDOW_SIZE_BYTES;
@@ -15,7 +14,7 @@ vec_void_t split_frames(const size_t samples_length, const float *samples) {
       copy_bytes = WINDOW_SIZE_BYTES - samples_length + i;
     }
     memcpy(frame, &samples[i], WINDOW_SIZE_BYTES);
-    vec_push(&frames, frame);
+    cvector_push_back(frames, frame);
   }
   return frames;
 }
@@ -39,26 +38,25 @@ float calculate_time(int index) {
   return floorf((float)index / (float)WINDOW_SIZE * 1000.0f) / 1000.0f;
 }
 
-vec_void_t merge_segments(vec_void_t original) {
-  vec_void_t result;
-  vec_init(&result);
-  if (original.length == 0)
+cvector(struct SpeechSegment)
+    merge_segments(cvector(struct SpeechSegment) original) {
+  cvector(struct SpeechSegment) result = NULL;
+  if (cvector_size(original) == 0)
     return result;
-  struct SpeechSegment *first_segment = original.data[0];
-  int left = first_segment->start_index;
-  int right = first_segment->end_index;
-  if (original.length > 1) {
-    vec_sort(&original, compare_start_index);
-    for (int i = 0; i < original.length; i++) {
-      struct SpeechSegment *segment = original.data[i];
-      if (segment->start_index > right) {
-        struct SpeechSegment *updated_segment =
-            malloc(sizeof(struct SpeechSegment));
-        updated_segment->start_index = left;
-        updated_segment->end_index = right;
-        updated_segment->start_time = calculate_time(left);
-        updated_segment->end_time = calculate_time(right);
-        vec_push(&result, updated_segment);
+  struct SpeechSegment first_segment = original[0];
+  int left = first_segment.start_index;
+  int right = first_segment.end_index;
+  if (cvector_size(original) > 1) {
+    // vec_sort(&original, compare_start_index);
+    for (int i = 0; i < cvector_size(original); i++) {
+      struct SpeechSegment segment = original[i];
+      if (segment.start_index > right) {
+        struct SpeechSegment updated_segment;
+        updated_segment.start_index = left;
+        updated_segment.end_index = right;
+        updated_segment.start_time = calculate_time(left);
+        updated_segment.end_time = calculate_time(right);
+        cvector_push_back(result, updated_segment);
       }
     }
   }
@@ -73,17 +71,16 @@ detect_segments(struct SileroModel *model, const float start_threshold,
                 const float min_silence_samples_at_max_speech,
                 const size_t samples_length, const float *samples,
                 size_t *out_segments_length) {
-  vec_void_t frames = split_frames(samples_length, samples);
-  vec_void_t segments;
-  vec_init(&segments);
+  cvector(float *) frames = split_frames(samples_length, samples);
+  cvector(struct SpeechSegment) segments;
   bool triggered = false;
   int temp_end = 0;
   int previous_end = 0;
   int next_start = 0;
   struct SpeechSegment current_segment;
   reset_segment(&current_segment);
-  for (int i = 0; i < frames.length; i++) {
-    float *frame = frames.data[i];
+  for (int i = 0; i < cvector_size(frames); i++) {
+    float *frame = frames[i];
     float probability = detect_speech(model, WINDOW_SIZE, frame);
 
     if (probability >= start_threshold && temp_end != 0) {
@@ -103,7 +100,7 @@ detect_segments(struct SileroModel *model, const float start_threshold,
         WINDOW_SIZE * i - current_segment.start_index > max_speech_samples) {
       if (previous_end != 0) {
         current_segment.end_index = previous_end;
-        vec_push(&segments, &current_segment);
+        cvector_push_back(segments, current_segment);
         reset_segment(&current_segment);
         if (next_start < previous_end) {
           triggered = false;
@@ -115,7 +112,7 @@ detect_segments(struct SileroModel *model, const float start_threshold,
         temp_end = 0;
       } else {
         current_segment.end_index = WINDOW_SIZE * i;
-        vec_push(&segments, &current_segment);
+        cvector_push_back(segments, current_segment);
         reset_segment(&current_segment);
         previous_end = 0;
         next_start = 0;
@@ -139,7 +136,7 @@ detect_segments(struct SileroModel *model, const float start_threshold,
         current_segment.end_index = temp_end;
         if (current_segment.end_index - current_segment.start_index >
             min_silence_samples) {
-          vec_push(&segments, &current_segment);
+          cvector_push_back(segments, current_segment);
         }
         reset_segment(&current_segment);
         previous_end = 0;
@@ -151,52 +148,86 @@ detect_segments(struct SileroModel *model, const float start_threshold,
     }
     free(frame);
   }
-  vec_deinit(&frames);
+  cvector_free(frames);
+
+  printf("minSpeechSamples: %f\n", min_speech_samples);
+  fflush(stdout);
+
+  printf("startThreshold: %f\n", start_threshold);
+  fflush(stdout);
+
+  printf("endThreshold: %f\n", end_threshold);
+  fflush(stdout);
+
+  printf("WINDOW_SIZE: %d\n", WINDOW_SIZE);
+  fflush(stdout);
+
+  printf("minSpeechSamples: %f\n", min_speech_samples);
+  fflush(stdout);
+
+  printf("maxSpeechSamples: %f\n", max_speech_samples);
+  fflush(stdout);
+
+  printf("speechPadSamples: %f\n", speech_pad_samples);
+  fflush(stdout);
+
+  printf("minSilenceSamples: %f\n", min_silence_samples);
+  fflush(stdout);
+
+  printf("minSilenceSamplesAtMaxSpeech: %f\n",
+         min_silence_samples_at_max_speech);
+  fflush(stdout);
 
   if (current_segment.start_index >= 0 &&
       WINDOW_SIZE - current_segment.start_index > min_speech_samples) {
     current_segment.end_index = WINDOW_SIZE;
-    vec_push(&segments, &current_segment);
+    cvector_push_back(segments, current_segment);
   }
 
-  for (int i = 0; i < segments.length; i++) {
-    struct SpeechSegment current_segment =
-        *(struct SpeechSegment *)(segments.data[i]);
+  for (int i = 0; i < cvector_size(segments); i++) {
+    struct SpeechSegment current_segment = segments[i];
     if (i == 0) {
       current_segment.start_index =
           math_max(0, current_segment.start_index - speech_pad_samples);
     }
-    if (i != segments.length - 1) {
-      struct SpeechSegment *next_segment = segments.data[i + 1];
+    if (i != cvector_size(segments) - 1) {
+      struct SpeechSegment next_segment = segments[i + 1];
       int silence_duration =
-          next_segment->start_index - current_segment.end_index;
+          next_segment.start_index - current_segment.end_index;
       if (silence_duration < speech_pad_samples * 2) {
         current_segment.end_index += silence_duration / 2;
-        next_segment->start_index =
-            math_max(0, next_segment->start_index - silence_duration / 2);
+        next_segment.start_index =
+            math_max(0, next_segment.start_index - silence_duration / 2);
       } else {
         current_segment.end_index = math_min(
             WINDOW_SIZE, current_segment.end_index + speech_pad_samples);
-        next_segment->start_index =
-            math_max(0, next_segment->start_index - speech_pad_samples);
+        next_segment.start_index =
+            math_max(0, next_segment.start_index - speech_pad_samples);
       }
     } else {
       current_segment.end_index =
           math_min(WINDOW_SIZE, current_segment.end_index + speech_pad_samples);
     }
   }
+  printf("segments: %lu\n", cvector_size(segments));
+  fflush(stdout);
 
-  vec_void_t vec_result = merge_segments(segments);
-  size_t result_bytes = vec_result.length * sizeof(struct SpeechSegment);
+  cvector(struct SpeechSegment) vec_result = merge_segments(segments);
+  size_t result_bytes = cvector_size(vec_result) * sizeof(struct SpeechSegment);
   struct SpeechSegment *out_segments = calloc(1, result_bytes);
-  memcpy(out_segments, vec_result.data, result_bytes);
-  *out_segments_length = vec_result.length;
+  memcpy(out_segments, vec_result, result_bytes);
+  *out_segments_length = cvector_size(vec_result);
 
-  for (int i = 0; i < vec_result.length; i++) {
-    free(vec_result.data[i]);
+  printf("vec_result: %lu\n", cvector_size(vec_result));
+  fflush(stdout);
+
+  for (int i = 0; i < cvector_size(segments); i++) {
+    segments[0].start_index = 1000;
+    printf("vec_result[%d]=%d\n", i, segments[i].start_index);
+    fflush(stdout);
   }
 
-  vec_deinit(&segments);
-  vec_deinit(&vec_result);
+  cvector_free(segments);
+  cvector_free(vec_result);
   return out_segments;
 }

@@ -14,6 +14,7 @@ import Foreign (Ptr, Storable (..), free, malloc, nullPtr, peekArray)
 import Foreign.C (CFloat (..), CInt)
 import Foreign.Storable.Generic (GStorable)
 import GHC.Generics (Generic)
+import GHC.Real (infinity)
 import Silero.Model (SileroModel (SileroModel), windowSize)
 
 data VoiceDetector = VoiceDetector
@@ -33,14 +34,13 @@ defaultVad =
     { startThreshold = 0.5
     , endThreshold = 0.35
     , minSpeechSamples = sampleRate / 1000.0 * 250.0 -- 250ms.
-    , maxSpeechSamples = sampleRate / maxFloat - fromIntegral windowSize - 2 * speechPadSamples
+    , maxSpeechSamples = 1 / 0
     , speechPadSamples = speechPadSamples
     , minSilenceSamples = sampleRate / 1000.0 * 100.0 -- 100ms.
     , minSilenceSamplesAtMaxSpeech = sampleRate / 1000.0 * 98.0 -- 98ms
     }
   where
     sampleRate = 16_000.0
-    maxFloat = fromIntegral . snd $ floatRange @Float 0.0
     speechPadSamples = sampleRate / 1000.0 * 30.0 -- 30ms.
 
 data SpeechSegment = SpeechSegment
@@ -79,16 +79,32 @@ detectSegments vad (SileroModel model) samples = do
       segments <-
         c_detect_segments
           model
-          (realToFrac vad.startThreshold)
-          vad.endThreshold
-          vad.minSpeechSamples
-          vad.maxSpeechSamples
-          vad.speechPadSamples
-          vad.minSilenceSamples
-          vad.minSilenceSamplesAtMaxSpeech
-          (Vector.length samples)
-          samplesPtr
-          segmentsLengthPtr
+          -- (realToFrac vad . startThreshold)
+          undefined
+          undefined
+          undefined
+          undefined
+          undefined
+          undefined
+          undefined
+          undefined
+          undefined
+          undefined
+      --  vad
+      -- . endThreshold
+      --   vad
+      -- . minSpeechSamples
+      --   vad
+      -- . maxSpeechSamples
+      --   vad
+      -- . speechPadSamples
+      --   vad
+      -- . minSilenceSamples
+      --   vad
+      -- . minSilenceSamplesAtMaxSpeech
+      --  (Vector.length samples)
+      --  samplesPtr
+      --  segmentsLengthPtr
       putStrLn "after c_detect_segments"
       samplesLength <- peek segmentsLengthPtr
       peekArray
