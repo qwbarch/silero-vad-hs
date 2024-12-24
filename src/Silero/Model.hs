@@ -3,20 +3,29 @@ module Silero.Model (
   loadModel,
   releaseModel,
   detectSpeech,
+  windowSize,
 ) where
 
 import Data.Vector.Storable (Vector)
 import qualified Data.Vector.Storable as Vector
-import Foreign (FunPtr, Ptr)
-import Foreign.C (CString, withCString)
+import Foreign (FunPtr, Ptr, Storable, castPtr)
+import Foreign.C (CInt (..), CString, withCString)
+import Foreign.Storable (Storable (..))
+import GHC.Generics (Generic)
+import GHC.IO (unsafeDupablePerformIO)
 import Paths_silero_vad (getDataFileName)
 import System.Posix (RTLDFlags (RTLD_NOW), dlopen, dlsym)
 
-foreign import ccall "silero_vad.h load_model" c_load_model :: FunPtr () -> CString -> IO (Ptr ())
+foreign import ccall "model.h get_window_size" c_get_window_size :: IO Int
 
-foreign import ccall "silero_vad.h release_model" c_release_model :: Ptr () -> IO ()
+foreign import ccall "model.h load_model" c_load_model :: FunPtr () -> CString -> IO (Ptr ())
 
-foreign import ccall "silero_vad.h detect_speech" c_detect_speech :: Ptr () -> Int -> Ptr Float -> IO Float
+foreign import ccall "model.h release_model" c_release_model :: Ptr () -> IO ()
+
+foreign import ccall "model.h detect_speech" c_detect_speech :: Ptr () -> Int -> Ptr Float -> IO Float
+
+windowSize :: Int
+windowSize = unsafeDupablePerformIO c_get_window_size
 
 -- |
 -- Holds state to be used for voice activity detection.
@@ -24,6 +33,15 @@ foreign import ccall "silero_vad.h detect_speech" c_detect_speech :: Ptr () -> I
 newtype SileroModel = SileroModel
   { api :: Ptr ()
   }
+  deriving (Generic)
+
+instance Storable SileroModel where
+  sizeOf _ = sizeOf (undefined :: Ptr ())
+  alignment _ = alignment (undefined :: Ptr ())
+  peek ptr = do
+    apiPtr <- peek (castPtr ptr)
+    return $ SileroModel apiPtr
+  poke ptr (SileroModel apiPtr) = poke (castPtr ptr) apiPtr
 
 loadModel :: IO SileroModel
 loadModel = do

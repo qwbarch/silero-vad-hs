@@ -2,9 +2,10 @@ import Data.Function ((&))
 import Data.Int (Int32)
 import Data.Vector.Storable (Vector)
 import qualified Data.Vector.Storable as Vector
-import Data.WAVE (WAVE (..), getWAVEFile)
+import Data.WAVE (WAVE (..), WAVESample, getWAVEFile)
 import Paths_silero_vad (getDataFileName)
-import Silero.Model (detectSpeech, loadModel, releaseModel)
+import Silero.Detector (VoiceDetector (..), defaultVad, detectSegments)
+import Silero.Model (detectSpeech, loadModel, releaseModel, windowSize)
 import Test.Tasty (defaultMain, testGroup)
 import Test.Tasty.HUnit (testCase, (@?=))
 
@@ -20,12 +21,14 @@ main = defaultMain $ testGroup "Project" testTree
               samples =
                 concat wav.waveSamples
                   & Vector.fromList
-                  & Vector.map ((\sample -> sample / fromIntegral (maxBound :: Int32)) . fromIntegral)
+                  & Vector.map (\sample -> abs $ fromIntegral sample / fromIntegral (maxBound :: WAVESample))
               xs = Vector.take (round @Float $ 16000.0 * 0.02) samples
 
-          prob <- detectSpeech model xs
+          -- print defaultVad
+          print windowSize
+          segments <- detectSegments defaultVad model samples
 
-          putStrLn $ "probability: " <> show prob
+          print segments
 
           releaseModel model
           () @?= ()

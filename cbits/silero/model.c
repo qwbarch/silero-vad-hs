@@ -13,6 +13,8 @@ const int64_t state_shape[] = {2, 1, 128};
 const char *input_names[] = {"input", "state", "sr"};
 const char *output_names[] = {"output", "stateN"};
 
+float get_window_size() { return WINDOW_SIZE; }
+
 struct SileroModel *load_model(OrtApiBase *(*ortGetApiBase)(),
                                const char *model_path) {
   struct SileroModel *model = malloc(sizeof(struct SileroModel));

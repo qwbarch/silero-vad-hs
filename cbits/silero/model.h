@@ -6,6 +6,8 @@
 #define WINDOW_SIZE 512
 #define WINDOW_SIZE_BYTES WINDOW_SIZE * sizeof(float)
 
+float get_window_size();
+
 struct SileroModel {
   const struct OrtApi *api;
   OrtEnv *env;
