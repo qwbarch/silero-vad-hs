@@ -1,9 +1,10 @@
 #ifndef SILERO_DETECTOR_H
 #define SILERO_DETECTOR_H
 
-#include "model.h"
-#include "../vec.h"
 #include <stdio.h>
+#include "model.h"
+#include "math.h"
+#include "../vec.h"
 
 struct SpeechSegment {
   int start_index;

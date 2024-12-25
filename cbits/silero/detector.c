@@ -28,11 +28,23 @@ void detect_segments(struct SileroModel *model, const float start_threshold,
                      size_t *out_segments_length,
                      struct SpeechSegment **out_segments) {
 
-  size_t frames_length = samples_length / WINDOW_LENGTH;
+  size_t frames_length = ceil((double)samples_length / (double)WINDOW_LENGTH);
+  printf("frames length %lu\n", frames_length);
   for (int i = 0; i < frames_length; i++) {
-    const float *frame = samples + i * WINDOW_LENGTH;
+    const int offset = i * WINDOW_LENGTH;
+    const bool is_last_frame = offset == (frames_length - 1) * WINDOW_LENGTH;
+    float *frame = is_last_frame ? calloc(WINDOW_LENGTH, WINDOW_BYTES)
+                                 : (float *)(samples + offset);
+    if (is_last_frame) {
+      memcpy(frame, samples + offset,
+             samples_length - (frames_length - 1) * WINDOW_LENGTH);
+    }
     float probability = detect_speech(model, frame);
-    printf("probability: %f\n", probability);
+    for (int j = 0; j < WINDOW_LENGTH; j++) {
+      printf("x: %d %f\n", i, frame[j]);
+      fflush(stdout);
+    }
+    // printf("probability: %f\n", probability);
     fflush(stdout);
   }
 

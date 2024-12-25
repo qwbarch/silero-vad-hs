@@ -1,3 +1,4 @@
+import Control.Monad (forM_)
 import Data.Function ((&))
 import Data.Int (Int32)
 import Data.Vector.Storable (Vector)
@@ -9,6 +10,7 @@ import Silero.Detector (VoiceDetector (..), defaultVad, detectSegments)
 import Silero.Model (detectSpeech, loadModel, releaseModel, windowSize)
 import Test.Tasty (defaultMain, testGroup)
 import Test.Tasty.HUnit (testCase, (@?=))
+import Text.Printf (printf)
 
 main :: IO ()
 main = defaultMain $ testGroup "Project" testTree
@@ -26,9 +28,11 @@ main = defaultMain $ testGroup "Project" testTree
 
           -- print defaultVad
           print windowSize
-          segments <- detectSegments defaultVad model samples
+          -- segments <- detectSegments defaultVad model samples
 
-          print segments
+          -- print segments
+          forM_ (Vector.toList samples) $ \sample -> do
+            printf "%f\n" sample
 
           releaseModel model
           () @?= ()
