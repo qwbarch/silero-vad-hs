@@ -1,14 +1,16 @@
-name: SileroVAD
+name: silero-vad
 version: 0.1.0.0
 tested-with: GHC == 9.2.8
 
-library:
-  source-dirs: src
-  c-sources:
-    - cbits/**/*
-      
+include-dirs: cbits
+c-sources: cbits/**/*
 data-files:
   - lib/onnxruntime/lib/libonnxruntime.so
+  - lib/silero-vad/silero_vad.onnx
+  - lib/jfk.wav
+
+library:
+  source-dirs: src
 
 tests:
   test:
@@ -19,6 +21,7 @@ tests:
     dependencies:
       - tasty
       - tasty-hunit
+      - WAVE
 
 ghc-options:
   -threaded
@@ -29,7 +32,6 @@ ghc-options:
   -fspecialise-aggressively
   -Wall
   -Wno-name-shadowing
-  -Werror
 
 default-extensions:
   - DataKinds
@@ -61,3 +63,5 @@ dependencies:
   - base >= 4.16.4 && < 5
   - unix ^>= 2.8.0.0
   - directory
+  - vector
+  - derive-storable
