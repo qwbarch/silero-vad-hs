@@ -56,14 +56,8 @@ void merge_and_calculate_time(vector(struct SpeechSegment) * in_segments,
   vector_add(out_segments, out_segment);
 }
 
-void detect_segments(struct SileroModel *model, const float start_threshold,
-                     const float end_threshold, const float min_speech_samples,
-                     const float max_speech_samples,
-                     const float speech_pad_samples,
-                     const float min_silence_samples,
-                     const float min_silence_samples_at_max_speech,
-                     const size_t samples_length, const float *samples,
-                     size_t *out_segments_length,
+void detect_segments(struct VoiceDetector *vad, const size_t samples_length,
+                     const float *samples, size_t *out_segments_length,
                      struct SpeechSegment **out_segments) {
 
   size_t frames_length = ceil((double)samples_length / (double)WINDOW_LENGTH);
@@ -83,27 +77,27 @@ void detect_segments(struct SileroModel *model, const float start_threshold,
       memcpy(frame, samples + offset,
              samples_length - (frames_length - 1) * WINDOW_LENGTH);
     }
-    float probability = detect_speech(model, frame);
+    float probability = detect_speech(vad->model, frame);
 
     if (is_last_frame) {
       free(frame);
     }
 
-    if (probability >= start_threshold && temp_end != 0) {
+    if (probability >= vad->start_threshold && temp_end != 0) {
       temp_end = 0;
       if (next_start < previous_end) {
         next_start = i * WINDOW_LENGTH;
       }
     }
 
-    if (probability >= start_threshold && !triggered) {
+    if (probability >= vad->start_threshold && !triggered) {
       triggered = true;
       current_segment.start_index = i * WINDOW_LENGTH;
       continue;
     }
 
-    if (triggered &&
-        i * WINDOW_LENGTH - current_segment.start_index > max_speech_samples) {
+    if (triggered && i * WINDOW_LENGTH - current_segment.start_index >
+                         vad->max_speech_samples) {
       if (previous_end != 0) {
         current_segment.end_index = previous_end;
         vector_add(&segments, current_segment);
@@ -128,19 +122,20 @@ void detect_segments(struct SileroModel *model, const float start_threshold,
       }
     }
 
-    if (probability < end_threshold && triggered) {
+    if (probability < vad->end_threshold && triggered) {
       if (temp_end == 0) {
         temp_end = i * WINDOW_LENGTH;
       }
-      if (i * WINDOW_LENGTH - temp_end > min_silence_samples_at_max_speech) {
+      if (i * WINDOW_LENGTH - temp_end >
+          vad->min_silence_samples_at_max_speech) {
         previous_end = temp_end;
       }
-      if (i * WINDOW_LENGTH - temp_end < min_silence_samples) {
+      if (i * WINDOW_LENGTH - temp_end < vad->min_silence_samples) {
         continue;
       } else {
         current_segment.end_index = temp_end;
         if (current_segment.end_index - current_segment.start_index >
-            min_silence_samples) {
+            vad->min_silence_samples) {
           vector_add(&segments, current_segment);
           reset_segment(&current_segment);
           previous_end = 0;
@@ -154,7 +149,7 @@ void detect_segments(struct SileroModel *model, const float start_threshold,
   }
 
   if (current_segment.start_index >= 0 &&
-      samples_length - current_segment.start_index > min_speech_samples) {
+      samples_length - current_segment.start_index > vad->min_speech_samples) {
     current_segment.end_index = samples_length;
     vector_add(&segments, current_segment);
   }
@@ -163,24 +158,24 @@ void detect_segments(struct SileroModel *model, const float start_threshold,
     struct SpeechSegment *segment = &segments[i];
     if (i == 0) {
       segment->start_index =
-          math_max(0, segment->start_index - speech_pad_samples);
+          math_max(0, segment->start_index - vad->speech_pad_samples);
     }
     if (i != vector_size(segments) - 1) {
       struct SpeechSegment *next_segment = &segments[i + 1];
       int silence_duration = next_segment->start_index - segment->end_index;
-      if (silence_duration < 2 * speech_pad_samples) {
+      if (silence_duration < 2 * vad->speech_pad_samples) {
         segment->end_index += silence_duration / 2;
         next_segment->start_index =
             math_max(0, next_segment->start_index - silence_duration / 2);
       } else {
-        segment->end_index =
-            math_min(samples_length, segment->end_index + speech_pad_samples);
+        segment->end_index = math_min(
+            samples_length, segment->end_index + vad->speech_pad_samples);
         next_segment->start_index =
-            math_max(0, next_segment->start_index - speech_pad_samples);
+            math_max(0, next_segment->start_index - vad->speech_pad_samples);
       }
     } else {
-      segment->end_index =
-          math_min(samples_length, segment->end_index + speech_pad_samples);
+      segment->end_index = math_min(
+          samples_length, segment->end_index + vad->speech_pad_samples);
     }
   }
 
