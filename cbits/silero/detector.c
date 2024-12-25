@@ -84,6 +84,11 @@ void detect_segments(struct SileroModel *model, const float start_threshold,
              samples_length - (frames_length - 1) * WINDOW_LENGTH);
     }
     float probability = detect_speech(model, frame);
+
+    if (is_last_frame) {
+      free(frame);
+    }
+
     if (probability >= start_threshold && temp_end != 0) {
       temp_end = 0;
       if (next_start < previous_end) {

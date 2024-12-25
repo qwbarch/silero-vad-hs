@@ -49,12 +49,15 @@ void release_model(struct SileroModel *model) {
   model->api->ReleaseSession(model->session);
   model->api->ReleaseMemoryInfo(model->memory_info);
   free(model->state);
+  free(model->buffer);
+  free(model->context);
   free(model);
 }
 
 void reset_model(struct SileroModel *model) {
-  // TODO
-  // memset(model->state, 0, STATE_LENGTH * sizeof(float));
+  memset(model->state, 0.0f, STATE_BYTES);
+  memset(model->buffer, 0.0f, BUFFER_BYTES);
+  memset(model->context, 0.0f, CONTEXT_BYTES);
 }
 
 float detect_speech(struct SileroModel *model, const float *samples) {
