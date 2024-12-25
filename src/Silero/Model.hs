@@ -1,3 +1,5 @@
+{-# LANGUAGE CPP #-}
+
 module Silero.Model (
   SileroModel (..),
   detectSpeech,
@@ -16,8 +18,13 @@ import Foreign.Storable (Storable (..))
 import GHC.Generics (Generic)
 import GHC.IO (unsafeDupablePerformIO)
 import Paths_silero_vad (getDataFileName)
-import System.Posix (RTLDFlags (RTLD_NOW), dlopen, dlsym)
 import UnliftIO (MonadIO (liftIO), MonadUnliftIO, bracket)
+
+#if defined (linux_HOST_OS) || defined (darwin_HOST_OS)
+
+import System.Posix (RTLDFlags (RTLD_NOW), dlopen, dlsym)
+
+#endif
 
 foreign import ccall "model.h get_window_length" c_get_window_length :: IO Int64
 
@@ -53,10 +60,43 @@ instance Storable SileroModel where
     return $ SileroModel apiPtr
   poke ptr (SileroModel apiPtr) = poke (castPtr ptr) apiPtr
 
+#if defined(linux_HOST_OS)
+
+libraryPath :: FilePath
+libraryPath = "lib/onnxruntime/linux-x64/lib/libonnxruntime.so"
+
+#elif defined(darwin_HOST_OS)
+  #if defined(aarch64_HOST_ARCH)
+
+  libraryPath :: FilePath
+  libraryPath = "lib/onnxruntime/osx-arm64/lib/libonnxruntime.dylib"
+
+  #else
+
+  libraryPath :: FilePath
+  libraryPath = "lib/onnxruntime/osx-x64/lib/libonnxruntime.dylib"
+
+  #endif
+
+#else
+
+libraryPath :: FilePath
+libraryPath = "lib/onnxruntime/windows-x64/lib/onnxruntime.dll"
+
+#endif
+
+#if defined (linux_HOST_OS) || defined (darwin_HOST_OS)
+
+loadLibrary :: IO (FunPtr ())
+loadLibrary = do
+  dl <- flip dlopen [RTLD_NOW] =<< getDataFileName libraryPath
+  dlsym dl "OrtGetApiBase"
+
+#endif
+
 loadModel :: IO SileroModel
 loadModel = do
-  dl <- flip dlopen [RTLD_NOW] =<< getDataFileName "lib/onnxruntime/lib/libonnxruntime.so"
-  api <- dlsym dl "OrtGetApiBase"
+  api <- loadLibrary
   modelPath <- getDataFileName "lib/silero-vad/silero_vad.onnx"
   vad <-
     withCString modelPath $

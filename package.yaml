@@ -5,7 +5,7 @@ tested-with: GHC == 9.2.8
 include-dirs: cbits
 c-sources: cbits/**/*
 data-files:
-  - lib/onnxruntime/lib/libonnxruntime.so
+  - lib/onnxruntime/linux-x64/lib/libonnxruntime.so
   - lib/silero-vad/silero_vad.onnx
   - lib/jfk.wav
 
@@ -61,8 +61,15 @@ default-extensions:
 
 dependencies:
   - base >= 4.16.4 && < 5
-  - unix ^>= 2.8.0.0
   - directory
   - vector
   - derive-storable
   - unliftio
+
+when:
+  - condition: os(linux) || os(darwin)
+    dependencies:
+      - unix
+  - condition: os(windows)
+    dependencies:
+      - Win32

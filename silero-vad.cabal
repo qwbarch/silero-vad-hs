@@ -12,7 +12,7 @@ build-type:     Simple
 tested-with:
     GHC == 9.2.8
 data-files:
-    lib/onnxruntime/lib/libonnxruntime.so
+    lib/onnxruntime/linux-x64/lib/libonnxruntime.so
     lib/silero-vad/silero_vad.onnx
     lib/jfk.wav
 
@@ -63,10 +63,15 @@ library
       base >=4.16.4 && <5
     , derive-storable
     , directory
-    , unix >=2.8.0.0 && <2.9
     , unliftio
     , vector
   default-language: Haskell2010
+  if os(linux) || os(darwin)
+    build-depends:
+        unix
+  if os(windows)
+    build-depends:
+        Win32
 
 test-suite test
   type: exitcode-stdio-1.0
@@ -120,7 +125,12 @@ test-suite test
     , directory
     , tasty
     , tasty-hunit
-    , unix >=2.8.0.0 && <2.9
     , unliftio
     , vector
   default-language: Haskell2010
+  if os(linux) || os(darwin)
+    build-depends:
+        unix
+  if os(windows)
+    build-depends:
+        Win32
