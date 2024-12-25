@@ -5,7 +5,7 @@ module Silero.Detector (
 ) where
 
 import Control.Applicative (Applicative (liftA2))
-import Control.Exception (bracket)
+import Control.Exception (bracket, finally)
 import Control.Monad (join)
 import Data.Int (Int32)
 import Data.Vector.Storable (Storable, Vector)
@@ -14,7 +14,7 @@ import Foreign (Ptr, Storable (..), free, malloc, nullPtr, peekArray)
 import Foreign.C (CFloat (..))
 import Foreign.Storable.Generic (GStorable)
 import GHC.Generics (Generic)
-import Silero.Model (SileroModel (SileroModel), windowSize)
+import Silero.Model (SileroModel (..), resetModel)
 
 data VoiceDetector = VoiceDetector
   { startThreshold :: Float
@@ -66,32 +66,31 @@ foreign import ccall "detector.h detect_segments"
     IO ()
 
 detectSegments :: VoiceDetector -> SileroModel -> Vector Float -> IO [SpeechSegment]
-detectSegments vad (SileroModel model) samples = do
-  putStrLn "detectSegments start"
+detectSegments vad model samples = do
   let withPtr :: forall a b. (Storable a) => (Ptr a -> IO b) -> IO b
       withPtr = bracket (malloc @a) free
-
   Vector.unsafeWith samples $ \samplesPtr ->
     withPtr @Int $ \segmentsLengthPtr ->
       withPtr @(Ptr SpeechSegment) $ \segmentsPtr -> do
         poke samplesPtr 0
-        putStrLn "before c_detect_segments"
-        c_detect_segments
-          model
-          (realToFrac vad.startThreshold)
-          vad.endThreshold
-          vad.minSpeechSamples
-          vad.maxSpeechSamples
-          vad.speechPadSamples
-          vad.minSilenceSamples
-          vad.minSilenceSamplesAtMaxSpeech
-          (Vector.length samples)
-          samplesPtr
-          segmentsLengthPtr
-          segmentsPtr
-        putStrLn "after c_detect_segments"
-        join $
-          liftA2
-            peekArray
-            (peek segmentsLengthPtr)
-            (peek segmentsPtr)
+        poke segmentsPtr nullPtr
+        flip finally (free =<< peek segmentsPtr) $ do
+          c_detect_segments
+            model.api
+            (realToFrac vad.startThreshold)
+            vad.endThreshold
+            vad.minSpeechSamples
+            vad.maxSpeechSamples
+            vad.speechPadSamples
+            vad.minSilenceSamples
+            vad.minSilenceSamplesAtMaxSpeech
+            (Vector.length samples)
+            samplesPtr
+            segmentsLengthPtr
+            segmentsPtr
+          resetModel model
+          join $
+            liftA2
+              peekArray
+              (peek segmentsLengthPtr)
+              (peek segmentsPtr)

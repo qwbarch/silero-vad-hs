@@ -18,7 +18,6 @@ main = defaultMain $ testGroup "Project" testTree
     testTree =
       [ testCase "Hello world!" $ do
           model <- loadModel
-
           wav <- getWAVEFile =<< getDataFileName "lib/jfk.wav"
           let samples :: Vector Float
               samples =

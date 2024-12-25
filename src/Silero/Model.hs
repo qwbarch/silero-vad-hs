@@ -4,6 +4,7 @@ module Silero.Model (
   releaseModel,
   detectSpeech,
   windowSize,
+  resetModel,
 ) where
 
 import Data.Vector.Storable (Vector)
@@ -21,6 +22,8 @@ foreign import ccall "model.h get_window_size" c_get_window_size :: IO Int
 foreign import ccall "model.h load_model" c_load_model :: FunPtr () -> CString -> IO (Ptr ())
 
 foreign import ccall "model.h release_model" c_release_model :: Ptr () -> IO ()
+
+foreign import ccall "model.h reset_model" c_reset_model :: Ptr () -> IO ()
 
 foreign import ccall "model.h detect_speech" c_detect_speech :: Ptr () -> Ptr Float -> IO Float
 
@@ -55,6 +58,9 @@ loadModel = do
 
 releaseModel :: SileroModel -> IO ()
 releaseModel = c_release_model . api
+
+resetModel :: SileroModel -> IO ()
+resetModel = c_reset_model . api
 
 detectSpeech :: SileroModel -> Vector Float -> IO Float
 detectSpeech model samples =
