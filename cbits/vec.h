@@ -45,7 +45,7 @@ extern "C" {
 #include <stdbool.h>
 #include <stdlib.h>
 
-#define vector(type) type*
+#define vector(type) type *
 
 // generic type for internal use
 typedef void* vector;

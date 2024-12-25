@@ -33,15 +33,13 @@ defaultVad =
     { startThreshold = 0.5
     , endThreshold = 0.35
     , minSpeechSamples = sampleRate / 1000.0 * 250.0 -- 250ms.
-    , maxSpeechSamples = sampleRate / maxFloat - fromIntegral windowSize - 2 * speechPadSamples
-    , speechPadSamples = speechPadSamples
+    , maxSpeechSamples = 1.0 / 0.0
+    , speechPadSamples = sampleRate / 1000.0 * 30.0 -- 30ms.
     , minSilenceSamples = sampleRate / 1000.0 * 100.0 -- 100ms.
     , minSilenceSamplesAtMaxSpeech = sampleRate / 1000.0 * 98.0 -- 98ms
     }
   where
     sampleRate = 16_000.0
-    maxFloat = fromIntegral . snd $ floatRange @Float 0.0
-    speechPadSamples = sampleRate / 1000.0 * 30.0 -- 30ms.
 
 data SpeechSegment = SpeechSegment
   { startIndex :: Int32

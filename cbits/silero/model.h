@@ -1,11 +1,12 @@
 #ifndef SILERO_MODEL_H
 #define SILERO_MODEL_H
 
-#include <stdio.h>
 #include "../../lib/onnxruntime/include/onnxruntime_c_api.h"
 
 #define WINDOW_LENGTH 512
 #define WINDOW_BYTES WINDOW_LENGTH * sizeof(float)
+
+#define SAMPLE_RATE 16000
 
 float get_window_size();
 

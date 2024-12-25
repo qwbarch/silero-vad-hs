@@ -9,7 +9,7 @@ module Silero.Model (
 import Data.Vector.Storable (Vector)
 import qualified Data.Vector.Storable as Vector
 import Foreign (FunPtr, Ptr, Storable, castPtr)
-import Foreign.C (CInt (..), CString, withCString)
+import Foreign.C (CString, withCString)
 import Foreign.Storable (Storable (..))
 import GHC.Generics (Generic)
 import GHC.IO (unsafeDupablePerformIO)

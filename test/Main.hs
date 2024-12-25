@@ -28,11 +28,11 @@ main = defaultMain $ testGroup "Project" testTree
 
           -- print defaultVad
           print windowSize
-          -- segments <- detectSegments defaultVad model samples
+          segments <- detectSegments defaultVad model samples
 
-          -- print segments
-          forM_ (Vector.toList samples) $ \sample -> do
-            printf "%f\n" sample
+          print segments
+          -- forM_ (Vector.toList samples) $ \sample -> do
+          --  printf "%f\n" sample
 
           releaseModel model
           () @?= ()

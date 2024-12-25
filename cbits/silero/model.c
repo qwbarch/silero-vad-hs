@@ -35,9 +35,9 @@ struct SileroModel *load_model(OrtApiBase *(*ortGetApiBase)(),
                                   model->session_options, &model->session);
   (void)model->api->CreateCpuMemoryInfo(OrtArenaAllocator, OrtMemTypeCPU,
                                         &model->memory_info);
-  model->state = malloc(STATE_BYTES);
-  model->buffer = malloc(BUFFER_BYTES);
-  model->context = malloc(CONTEXT_BYTES);
+  model->state = calloc(STATE_LENGTH, STATE_BYTES);
+  model->buffer = calloc(BUFFER_LENGTH, BUFFER_BYTES);
+  model->context = calloc(CONTEXT_LENGTH, CONTEXT_BYTES);
   model->input_shape[0] = 1;
   model->is_first_run = true;
   return model;
@@ -86,7 +86,7 @@ float detect_speech(struct SileroModel *model, const float *samples) {
       ONNX_TENSOR_ELEMENT_DATA_TYPE_FLOAT, &state_tensor);
 
   // Sample-rate tensor (assumes 16khz).
-  int64_t sample_rate[] = {16000};
+  int64_t sample_rate[] = {SAMPLE_RATE};
   OrtValue *sr_tensor = NULL;
   (void)model->api->CreateTensorWithDataAsOrtValue(
       model->memory_info, sample_rate, sizeof(int64_t), sr_shape,
