@@ -12,18 +12,24 @@ module Silero.Model (
 import Data.Int (Int64)
 import Data.Vector.Storable (Vector)
 import qualified Data.Vector.Storable as Vector
-import Foreign (FunPtr, Ptr, Storable, castPtr, castPtrToFunPtr)
-import Foreign.C (withCWString, CWString)
 import Foreign.Storable (Storable (..))
 import GHC.Generics (Generic)
 import GHC.IO (unsafeDupablePerformIO)
 import Paths_silero_vad (getDataFileName)
 import UnliftIO (MonadIO (liftIO), MonadUnliftIO, bracket)
-import System.Win32 (loadLibrary, getProcAddress)
 
 #if defined (linux_HOST_OS) || defined (darwin_HOST_OS)
 
 import System.Posix (RTLDFlags (RTLD_NOW), dlopen, dlsym)
+import Foreign (FunPtr, Ptr, castPtr)
+import Foreign.C (CString, withCString)
+
+#else
+
+
+import System.Win32 (getProcAddress, loadLibrary)
+import Foreign (FunPtr, Ptr, castPtr, castPtrToFunPtr)
+import Foreign.C (CWString, withCWString)
 
 #endif
 
@@ -31,13 +37,21 @@ foreign import ccall "model.h get_window_length" c_get_window_length :: IO Int64
 
 foreign import ccall "model.h get_sample_rate" c_get_sample_rate :: IO Int64
 
-foreign import ccall "model.h load_model" c_load_model :: FunPtr () -> CWString -> IO (Ptr ())
-
 foreign import ccall "model.h release_model" c_release_model :: Ptr () -> IO ()
 
 foreign import ccall "model.h reset_model" c_reset_model :: Ptr () -> IO ()
 
 foreign import ccall "model.h detect_speech" c_detect_speech :: Ptr () -> Ptr Float -> IO Float
+
+#if defined (linux_HOST_OS) || defined (darwin_HOST_OS)
+
+foreign import ccall "model.h load_model" c_load_model :: FunPtr () -> CString -> IO (Ptr ())
+
+#else
+
+foreign import ccall "model.h load_model" c_load_model :: FunPtr () -> CWString -> IO (Ptr ())
+
+#endif
 
 windowSize :: Int
 windowSize = fromIntegral $ unsafeDupablePerformIO c_get_window_length
@@ -61,54 +75,66 @@ instance Storable SileroModel where
     return $ SileroModel apiPtr
   poke ptr (SileroModel apiPtr) = poke (castPtr ptr) apiPtr
 
+libraryPath :: FilePath
 #if defined(linux_HOST_OS)
 
-libraryPath :: FilePath
 libraryPath = "lib/onnxruntime/linux-x64/lib/libonnxruntime.so"
 
 #elif defined(darwin_HOST_OS)
   #if defined(aarch64_HOST_ARCH)
 
-  libraryPath :: FilePath
   libraryPath = "lib/onnxruntime/osx-arm64/lib/libonnxruntime.dylib"
 
   #else
 
-  libraryPath :: FilePath
   libraryPath = "lib/onnxruntime/osx-x64/lib/libonnxruntime.dylib"
 
   #endif
 
 #else
 
-libraryPath :: FilePath
 libraryPath = "lib/onnxruntime/windows-x64/lib/onnxruntime.dll"
 
 #endif
 
+loadApi :: IO (FunPtr ())
 #if defined (linux_HOST_OS) || defined (darwin_HOST_OS)
 
-loadApi :: IO (FunPtr ())
 loadApi = do
   dl <- flip dlopen [RTLD_NOW] =<< getDataFileName libraryPath
   dlsym dl "OrtGetApiBase"
 
 #else
 
-loadApi :: IO (FunPtr ())
 loadApi = do
   library <- loadLibrary =<< getDataFileName libraryPath
   castPtrToFunPtr <$> getProcAddress library "OrtGetApiBase"
 
 #endif
 
+getModelPath :: IO String
+getModelPath = getDataFileName "lib/silero-vad/silero_vad.onnx"
+
+#if defined (linux_HOST_OS) || defined (darwin_HOST_OS)
+
+withModelPath :: (CString -> IO a) -> IO a
+withModelPath runModelPath = do
+  modelPath <- getModelPath
+  withCString modelPath $ runModelPath
+
+#else
+
+withModelPath :: (CWString -> IO a) -> IO a
+withModelPath runModelPath = do
+  modelPath <- getModelPath
+  withCWString modelPath runModelPath
+
+#endif
+
 loadModel :: IO SileroModel
 loadModel = do
   api <- loadApi
-  modelPath <- getDataFileName "lib/silero-vad/silero_vad.onnx"
-  vad <-
-    withCWString modelPath $
-      c_load_model api
+  vad <- withModelPath $ c_load_model api
   return $ SileroModel vad
 
 -- | Reset the internal state of the model. This should be called when giving fresh audio samples.
@@ -132,9 +158,9 @@ resetModel = liftIO . c_reset_model . api
 -- - Must be 16-bit audio.
 -- - Must contain exactly 512 samples.
 detectSpeech :: (MonadIO m) => SileroModel -> Vector Float -> m Float
-detectSpeech model samples
+detectSpeech (SileroModel api) samples
   | Vector.length samples /= windowSize =
       return 0.0
   | otherwise =
       liftIO . Vector.unsafeWith samples $
-        c_detect_speech model.api
+        c_detect_speech api

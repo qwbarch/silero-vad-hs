@@ -50,6 +50,7 @@ library
       TypeApplications
       TypeOperators
   ghc-options: -threaded -rtsopts -with-rtsopts=-N -O2 -flate-specialise -fspecialise-aggressively -Wall -Wno-name-shadowing
+  cc-options: -Wno-unused-matches
   include-dirs:
       cbits
   c-sources:
@@ -109,6 +110,7 @@ test-suite test
       TypeApplications
       TypeOperators
   ghc-options: -threaded -rtsopts -with-rtsopts=-N -O2 -flate-specialise -fspecialise-aggressively -Wall -Wno-name-shadowing
+  cc-options: -Wno-unused-matches
   include-dirs:
       cbits
   c-sources:

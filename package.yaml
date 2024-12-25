@@ -4,6 +4,7 @@ tested-with: GHC == 9.2.8
 
 include-dirs: cbits
 c-sources: cbits/**/*
+cc-options: -Wno-unused-matches
 data-files:
   - lib/onnxruntime/linux-x64/lib/libonnxruntime.so
   - lib/silero-vad/silero_vad.onnx
