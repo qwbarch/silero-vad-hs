@@ -18,7 +18,7 @@ main = defaultMain $ testGroup "silero-vad" testTree
     loadSamples = do
       wav <- getWAVEFile =<< getDataFileName "lib/jfk.wav"
       pure $
-        concat wav.waveSamples
+        concat (waveSamples wav)
           & Vector.fromList
           & Vector.map (realToFrac . sampleToDouble)
     testTree =

@@ -4,7 +4,7 @@ tested-with: GHC == 9.2.8
 
 include-dirs: cbits
 c-sources: cbits/**/*
-cc-options: -Wno-unused-matches
+cc-options: -Wno-unused-result
 data-files:
   - lib/onnxruntime/linux-x64/lib/libonnxruntime.so
   - lib/silero-vad/silero_vad.onnx
@@ -50,7 +50,6 @@ default-extensions:
   - NumericUnderscores
   - OverloadedLabels
   - OverloadedStrings
-  - OverloadedRecordDot
   - PolyKinds
   - QuasiQuotes
   - RankNTypes
@@ -61,7 +60,7 @@ default-extensions:
   - TypeOperators
 
 dependencies:
-  - base >= 4.16.4 && < 5
+  - base >= 4.14.3.0 && < 5
   - directory
   - vector
   - derive-storable

@@ -40,7 +40,6 @@ library
       NumericUnderscores
       OverloadedLabels
       OverloadedStrings
-      OverloadedRecordDot
       PolyKinds
       QuasiQuotes
       RankNTypes
@@ -50,7 +49,7 @@ library
       TypeApplications
       TypeOperators
   ghc-options: -threaded -rtsopts -with-rtsopts=-N -O2 -flate-specialise -fspecialise-aggressively -Wall -Wno-name-shadowing
-  cc-options: -Wno-unused-matches
+  cc-options: -Wno-unused-result
   include-dirs:
       cbits
   c-sources:
@@ -61,7 +60,7 @@ library
       cbits/vec.c
       cbits/vec.h
   build-depends:
-      base >=4.16.4 && <5
+      base >=4.14.3.0 && <5
     , derive-storable
     , directory
     , unliftio
@@ -100,7 +99,6 @@ test-suite test
       NumericUnderscores
       OverloadedLabels
       OverloadedStrings
-      OverloadedRecordDot
       PolyKinds
       QuasiQuotes
       RankNTypes
@@ -110,7 +108,7 @@ test-suite test
       TypeApplications
       TypeOperators
   ghc-options: -threaded -rtsopts -with-rtsopts=-N -O2 -flate-specialise -fspecialise-aggressively -Wall -Wno-name-shadowing
-  cc-options: -Wno-unused-matches
+  cc-options: -Wno-unused-result
   include-dirs:
       cbits
   c-sources:
@@ -122,7 +120,7 @@ test-suite test
       cbits/vec.h
   build-depends:
       WAVE
-    , base >=4.16.4 && <5
+    , base >=4.14.3.0 && <5
     , derive-storable
     , directory
     , tasty
