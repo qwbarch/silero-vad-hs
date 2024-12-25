@@ -8,7 +8,8 @@
 
 #define SAMPLE_RATE 16000
 
-float get_window_size();
+int64_t get_window_length();
+int64_t get_sample_rate();
 
 struct SileroModel {
   const struct OrtApi *api;

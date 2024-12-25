@@ -19,13 +19,14 @@ const int64_t state_shape[] = {2, 1, 128};
 const char *input_names[] = {"input", "state", "sr"};
 const char *output_names[] = {"output", "stateN"};
 
-float get_window_size() { return WINDOW_LENGTH; }
+int64_t get_window_length() { return WINDOW_LENGTH; }
+int64_t get_sample_rate() { return SAMPLE_RATE; }
 
 struct SileroModel *load_model(OrtApiBase *(*ortGetApiBase)(),
                                const char *model_path) {
   struct SileroModel *model = malloc(sizeof(struct SileroModel));
   model->api = ortGetApiBase()->GetApi(ORT_API_VERSION);
-  (void)model->api->CreateEnv(ORT_LOGGING_LEVEL, "silero_model", &model->env);
+  (void)model->api->CreateEnv(ORT_LOGGING_LEVEL, "silero-vad-hs", &model->env);
   (void)model->api->CreateSessionOptions(&model->session_options);
   (void)model->api->SetIntraOpNumThreads(model->session_options, 1);
   (void)model->api->SetInterOpNumThreads(model->session_options, 1);
@@ -58,6 +59,7 @@ void reset_model(struct SileroModel *model) {
   memset(model->state, 0.0f, STATE_BYTES);
   memset(model->buffer, 0.0f, BUFFER_BYTES);
   memset(model->context, 0.0f, CONTEXT_BYTES);
+  model->is_first_run = true;
 }
 
 float detect_speech(struct SileroModel *model, const float *samples) {

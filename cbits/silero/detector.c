@@ -188,4 +188,6 @@ void detect_segments(struct VoiceDetector *vad, const size_t samples_length,
          *out_segments_length * sizeof(struct SpeechSegment));
   vector_free(segments);
   vector_free(merged_segments);
+
+  reset_model(vad->model);
 }
