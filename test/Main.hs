@@ -3,6 +3,7 @@ import Data.Int (Int32)
 import Data.Vector.Storable (Vector)
 import qualified Data.Vector.Storable as Vector
 import Data.WAVE (WAVE (..), WAVESample, getWAVEFile, sampleToDouble)
+import Data.Word (Word16)
 import Paths_silero_vad (getDataFileName)
 import Silero.Detector (VoiceDetector (..), defaultVad, detectSegments)
 import Silero.Model (detectSpeech, loadModel, releaseModel, windowSize)

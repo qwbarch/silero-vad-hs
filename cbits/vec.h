@@ -1,181 +1,129 @@
-/** 
- * Copyright (c) 2014 rxi
- *
- * This library is free software; you can redistribute it and/or modify it
- * under the terms of the MIT license. See LICENSE for details.
- */
+/*
+BSD 3-Clause License
 
-#ifndef VEC_H
-#define VEC_H
+Copyright (c) 2024, Mashpoe
+All rights reserved.
 
+Redistribution and use in source and binary forms, with or without
+modification, are permitted provided that the following conditions are met:
+
+1. Redistributions of source code must retain the above copyright notice, this
+   list of conditions and the following disclaimer.
+
+2. Redistributions in binary form must reproduce the above copyright notice,
+   this list of conditions and the following disclaimer in the documentation
+   and/or other materials provided with the distribution.
+
+3. Neither the name of the copyright holder nor the names of its
+   contributors may be used to endorse or promote products derived from
+   this software without specific prior written permission.
+
+THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE
+FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
+SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
+CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
+OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+*/
+
+#ifndef vec_h
+#define vec_h
+
+#ifdef __cpp_decltype
+#include <type_traits>
+#define typeof(T) std::remove_reference<std::add_lvalue_reference<decltype(T)>::type>::type
+#endif
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+#include <stdbool.h>
 #include <stdlib.h>
-#include <string.h>
 
-#define VEC_VERSION "0.2.1"
+#define vector(type) type*
 
+// generic type for internal use
+typedef void* vector;
+// number of elements in a vector
+typedef size_t vec_size_t;
+// number of bytes for a type
+typedef size_t vec_type_t;
 
-#define vec_unpack_(v)\
-  (char**)&(v)->data, &(v)->length, &(v)->capacity, sizeof(*(v)->data)
+// TODO: more rigorous check for typeof support with different compilers
+#if _MSC_VER == 0 || __STDC_VERSION__ >= 202311L || defined __cpp_decltype
 
+// shortcut defines
 
-#define vec_t(T)\
-  struct { T *data; int length, capacity; }
+// vec_addr is a vector* (aka type**)
+#define vector_add_dst(vec_addr)\
+	((typeof(*vec_addr))(\
+	    _vector_add_dst((vector*)vec_addr, sizeof(**vec_addr))\
+	))
+#define vector_insert_dst(vec_addr, pos)\
+	((typeof(*vec_addr))(\
+	    _vector_insert_dst((vector*)vec_addr, sizeof(**vec_addr), pos)))
 
+#define vector_add(vec_addr, value)\
+	(*vector_add_dst(vec_addr) = value)
+#define vector_insert(vec_addr, pos, value)\
+	(*vector_insert_dst(vec_addr, pos) = value)
 
-#define vec_init(v)\
-  memset((v), 0, sizeof(*(v)))
+#else
 
+#define vector_add_dst(vec_addr, type)\
+	((type*)_vector_add_dst((vector*)vec_addr, sizeof(type)))
+#define vector_insert_dst(vec_addr, type, pos)\
+	((type*)_vector_insert_dst((vector*)vec_addr, sizeof(type), pos))
 
-#define vec_deinit(v)\
-  ( free((v)->data),\
-    vec_init(v) ) 
-
-
-#define vec_push(v, val)\
-  ( vec_expand_(vec_unpack_(v)) ? -1 :\
-    ((v)->data[(v)->length++] = (val), 0), 0 )
-
-
-#define vec_pop(v)\
-  (v)->data[--(v)->length]
-
-
-#define vec_splice(v, start, count)\
-  ( vec_splice_(vec_unpack_(v), start, count),\
-    (v)->length -= (count) )
-
-
-#define vec_swapsplice(v, start, count)\
-  ( vec_swapsplice_(vec_unpack_(v), start, count),\
-    (v)->length -= (count) )
-
-
-#define vec_insert(v, idx, val)\
-  ( vec_insert_(vec_unpack_(v), idx) ? -1 :\
-    ((v)->data[idx] = (val), 0), (v)->length++, 0 )
-    
-
-#define vec_sort(v, fn)\
-  qsort((v)->data, (v)->length, sizeof(*(v)->data), fn)
-
-
-#define vec_swap(v, idx1, idx2)\
-  vec_swap_(vec_unpack_(v), idx1, idx2)
-
-
-#define vec_truncate(v, len)\
-  ((v)->length = (len) < (v)->length ? (len) : (v)->length)
-
-
-#define vec_clear(v)\
-  ((v)->length = 0)
-
-
-#define vec_first(v)\
-  (v)->data[0]
-
-
-#define vec_last(v)\
-  (v)->data[(v)->length - 1]
-
-
-#define vec_reserve(v, n)\
-  vec_reserve_(vec_unpack_(v), n)
-
- 
-#define vec_compact(v)\
-  vec_compact_(vec_unpack_(v))
-
-
-#define vec_pusharr(v, arr, count)\
-  do {\
-    int i__, n__ = (count);\
-    if (vec_reserve_po2_(vec_unpack_(v), (v)->length + n__) != 0) break;\
-    for (i__ = 0; i__ < n__; i__++) {\
-      (v)->data[(v)->length++] = (arr)[i__];\
-    }\
-  } while (0)
-
-
-#define vec_extend(v, v2)\
-  vec_pusharr((v), (v2)->data, (v2)->length)
-
-
-#define vec_find(v, val, idx)\
-  do {\
-    for ((idx) = 0; (idx) < (v)->length; (idx)++) {\
-      if ((v)->data[(idx)] == (val)) break;\
-    }\
-    if ((idx) == (v)->length) (idx) = -1;\
-  } while (0)
-
-
-#define vec_remove(v, val)\
-  do {\
-    int idx__;\
-    vec_find(v, val, idx__);\
-    if (idx__ != -1) vec_splice(v, idx__, 1);\
-  } while (0)
-
-
-#define vec_reverse(v)\
-  do {\
-    int i__ = (v)->length / 2;\
-    while (i__--) {\
-      vec_swap((v), i__, (v)->length - (i__ + 1));\
-    }\
-  } while (0)
-
-
-#define vec_foreach(v, var, iter)\
-  if  ( (v)->length > 0 )\
-  for ( (iter) = 0;\
-        (iter) < (v)->length && (((var) = (v)->data[(iter)]), 1);\
-        ++(iter))
-
-
-#define vec_foreach_rev(v, var, iter)\
-  if  ( (v)->length > 0 )\
-  for ( (iter) = (v)->length - 1;\
-        (iter) >= 0 && (((var) = (v)->data[(iter)]), 1);\
-        --(iter))
-
-
-#define vec_foreach_ptr(v, var, iter)\
-  if  ( (v)->length > 0 )\
-  for ( (iter) = 0;\
-        (iter) < (v)->length && (((var) = &(v)->data[(iter)]), 1);\
-        ++(iter))
-
-
-#define vec_foreach_ptr_rev(v, var, iter)\
-  if  ( (v)->length > 0 )\
-  for ( (iter) = (v)->length - 1;\
-        (iter) >= 0 && (((var) = &(v)->data[(iter)]), 1);\
-        --(iter))
-
-
-
-int vec_expand_(char **data, int *length, int *capacity, int memsz);
-int vec_reserve_(char **data, int *length, int *capacity, int memsz, int n);
-int vec_reserve_po2_(char **data, int *length, int *capacity, int memsz,
-                     int n);
-int vec_compact_(char **data, int *length, int *capacity, int memsz);
-int vec_insert_(char **data, int *length, int *capacity, int memsz,
-                int idx);
-void vec_splice_(char **data, int *length, int *capacity, int memsz,
-                 int start, int count);
-void vec_swapsplice_(char **data, int *length, int *capacity, int memsz,
-                     int start, int count);
-void vec_swap_(char **data, int *length, int *capacity, int memsz,
-               int idx1, int idx2);
-
-
-typedef vec_t(void*) vec_void_t;
-typedef vec_t(char*) vec_str_t;
-typedef vec_t(int) vec_int_t;
-typedef vec_t(char) vec_char_t;
-typedef vec_t(float) vec_float_t;
-typedef vec_t(double) vec_double_t;
+#define vector_add(vec_addr, type, value)\
+	(*vector_add_dst(vec_addr, type) = value)
+#define vector_insert(vec_addr, type, pos, value)\
+	(*vector_insert_dst(vec_addr, type, pos) = value)
 
 #endif
+
+// vec is a vector (aka type*)
+#define vector_erase(vec, pos, len)\
+	(_vector_erase((vector)vec, sizeof(*vec), pos, len))
+#define vector_remove(vec, pos)\
+	(_vector_remove((vector)vec, sizeof(*vec), pos))
+
+#define vector_reserve(vec_addr, capacity)\
+	(_vector_reserve((vector*)vec_addr, sizeof(**vec_addr), capacity))
+
+#define vector_copy(vec)\
+	(_vector_copy((vector)vec, sizeof(*vec)))
+
+vector vector_create(void);
+
+void vector_free(vector vec);
+
+void* _vector_add_dst(vector* vec_addr, vec_type_t type_size);
+
+void* _vector_insert_dst(vector* vec_addr, vec_type_t type_size, vec_size_t pos);
+
+void _vector_erase(vector vec_addr, vec_type_t type_size, vec_size_t pos, vec_size_t len);
+
+void _vector_remove(vector vec_addr, vec_type_t type_size, vec_size_t pos);
+
+void vector_pop(vector vec);
+
+void _vector_reserve(vector* vec_addr, vec_type_t type_size, vec_size_t capacity);
+
+vector _vector_copy(vector vec, vec_type_t type_size);
+
+vec_size_t vector_size(vector vec);
+
+vec_size_t vector_capacity(vector vec);
+
+// closing bracket for extern "C"
+#ifdef __cplusplus
+}
+#endif
+
+#endif /* vec_h */

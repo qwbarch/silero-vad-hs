@@ -5,13 +5,13 @@ module Silero.Detector (
 ) where
 
 import Control.Applicative (Applicative (liftA2))
-import Control.Exception (bracket, finally)
+import Control.Exception (bracket)
 import Control.Monad (join)
 import Data.Int (Int32)
 import Data.Vector.Storable (Storable, Vector)
 import qualified Data.Vector.Storable as Vector
 import Foreign (Ptr, Storable (..), free, malloc, nullPtr, peekArray)
-import Foreign.C (CFloat (..), CInt)
+import Foreign.C (CFloat (..))
 import Foreign.Storable.Generic (GStorable)
 import GHC.Generics (Generic)
 import Silero.Model (SileroModel (SileroModel), windowSize)
@@ -64,7 +64,8 @@ foreign import ccall "detector.h detect_segments"
     Int -> -- samplesLength
     Ptr Float -> -- samples
     Ptr Int -> -- outSegmentsLength
-    IO (Ptr SpeechSegment)
+    Ptr (Ptr SpeechSegment) -> -- outSegments
+    IO ()
 
 detectSegments :: VoiceDetector -> SileroModel -> Vector Float -> IO [SpeechSegment]
 detectSegments vad (SileroModel model) samples = do
@@ -73,10 +74,10 @@ detectSegments vad (SileroModel model) samples = do
       withPtr = bracket (malloc @a) free
 
   Vector.unsafeWith samples $ \samplesPtr ->
-    withPtr @Int $ \segmentsLengthPtr -> do
-      poke samplesPtr 0
-      putStrLn "before c_detect_segments"
-      segments <-
+    withPtr @Int $ \segmentsLengthPtr ->
+      withPtr @(Ptr SpeechSegment) $ \segmentsPtr -> do
+        poke samplesPtr 0
+        putStrLn "before c_detect_segments"
         c_detect_segments
           model
           (realToFrac vad.startThreshold)
@@ -89,8 +90,10 @@ detectSegments vad (SileroModel model) samples = do
           (Vector.length samples)
           samplesPtr
           segmentsLengthPtr
-      putStrLn "after c_detect_segments"
-      samplesLength <- peek segmentsLengthPtr
-      peekArray
-        samplesLength
-        segments
+          segmentsPtr
+        putStrLn "after c_detect_segments"
+        join $
+          liftA2
+            peekArray
+            (peek segmentsLengthPtr)
+            (peek segmentsPtr)

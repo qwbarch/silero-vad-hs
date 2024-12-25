@@ -22,7 +22,7 @@ foreign import ccall "model.h load_model" c_load_model :: FunPtr () -> CString -
 
 foreign import ccall "model.h release_model" c_release_model :: Ptr () -> IO ()
 
-foreign import ccall "model.h detect_speech" c_detect_speech :: Ptr () -> Int -> Ptr Float -> IO Float
+foreign import ccall "model.h detect_speech" c_detect_speech :: Ptr () -> Ptr Float -> IO Float
 
 windowSize :: Int
 windowSize = unsafeDupablePerformIO c_get_window_size
@@ -57,6 +57,6 @@ releaseModel :: SileroModel -> IO ()
 releaseModel = c_release_model . api
 
 detectSpeech :: SileroModel -> Vector Float -> IO Float
-detectSpeech model samples = do
+detectSpeech model samples =
   Vector.unsafeWith samples $
-    c_detect_speech model.api (Vector.length samples)
+    c_detect_speech model.api

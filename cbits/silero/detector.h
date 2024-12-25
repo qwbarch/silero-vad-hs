@@ -1,10 +1,9 @@
 #ifndef SILERO_DETECTOR_H
 #define SILERO_DETECTOR_H
 
-#include <stdbool.h>
-#include <math.h>
 #include "model.h"
 #include "../vec.h"
+#include <stdio.h>
 
 struct SpeechSegment {
   int start_index;
@@ -13,7 +12,7 @@ struct SpeechSegment {
   float end_time;
 };
 
-struct SpeechSegment *detect_segments(
+void detect_segments(
   struct SileroModel *model,
   const float start_threshold,
   const float end_threshold,
@@ -24,7 +23,8 @@ struct SpeechSegment *detect_segments(
   const float min_silence_samples_at_max_speech,
   const size_t samples_length,
   const float *samples,
-  size_t *out_segments_length
+  size_t *out_segments_length,
+  struct SpeechSegment **out_segments
 );
 
 #endif
