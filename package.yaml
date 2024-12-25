@@ -61,10 +61,9 @@ default-extensions:
 
 dependencies:
   - base >= 4.14.3.0 && < 5
-  - directory
-  - vector
-  - derive-storable
-  - unliftio
+  - vector >= 0.13.0.0 && < 1
+  - derive-storable >= 0.3.0.0 && < 1
+  - unliftio >= 0.2.20.0 && < 1
 
 when:
   - condition: os(linux) || os(darwin)
