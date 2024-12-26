@@ -3,7 +3,7 @@
 module Silero.Model (
   SileroModel (..),
   detectSpeech,
-  windowSize,
+  windowLength,
   resetModel,
   sampleRate,
   withModel,
@@ -53,8 +53,8 @@ foreign import ccall "model.h load_model" c_load_model :: FunPtr () -> CWString 
 
 #endif
 
-windowSize :: Int
-windowSize = fromIntegral $ unsafeDupablePerformIO c_get_window_length
+windowLength :: Int
+windowLength = fromIntegral $ unsafeDupablePerformIO c_get_window_length
 
 sampleRate :: Int
 sampleRate = fromIntegral $ unsafeDupablePerformIO c_get_sample_rate
@@ -156,7 +156,7 @@ resetModel = liftIO . c_reset_model . api
 -- | **Warning: SileroModel holds internal state and is NOT thread safe.**
 detectSpeech :: (MonadIO m) => SileroModel -> Vector Float -> m Float
 detectSpeech (SileroModel api) samples
-  | Vector.length samples /= windowSize =
+  | Vector.length samples /= windowLength =
       return 0.0
   | otherwise =
       liftIO . Vector.unsafeWith samples $

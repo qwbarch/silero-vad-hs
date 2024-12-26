@@ -25,7 +25,7 @@ struct SileroModel
   bool is_first_run;
 };
 
-struct SileroModel *load_model(OrtApiBase *(*ortGetApiBase)(), const char *model_path);
+struct SileroModel *load_model(OrtApiBase *(*ortGetApiBase)(), const void *model_path);
 void release_model(struct SileroModel *model);
 void reset_model(struct SileroModel *model);
 float detect_speech(struct SileroModel *model, const float *samples);

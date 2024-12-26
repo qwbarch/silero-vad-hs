@@ -23,7 +23,7 @@ int64_t get_window_length() { return WINDOW_LENGTH; }
 int64_t get_sample_rate() { return SAMPLE_RATE; }
 
 struct SileroModel *load_model(OrtApiBase *(*ortGetApiBase)(),
-                               const char *model_path) {
+                               const void *model_path) {
   struct SileroModel *model = malloc(sizeof(struct SileroModel));
   model->api = ortGetApiBase()->GetApi(ORT_API_VERSION);
   (void)model->api->CreateEnv(ORT_LOGGING_LEVEL, "silero-vad-hs", &model->env);

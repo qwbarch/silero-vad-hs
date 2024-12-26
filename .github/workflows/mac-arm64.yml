@@ -1,4 +1,4 @@
-name: build-mac-x64
+name: mac-arm64
 on:
   push:
     branches: [main]
@@ -12,11 +12,18 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [macOS-13]
+        os: [macOS-14]
         ghc-version: ['9.8', '9.2.8', '8.10.7']
 
     steps:
       - uses: actions/checkout@v4
+
+      - name: Install LLVM
+        run: |
+          brew install llvm@12
+          echo "OPT=$(brew --prefix llvm@12)/bin/opt" >> "${GITHUB_ENV}"
+          echo "LLC=$(brew --prefix llvm@12)/bin/llc" >> "${GITHUB_ENV}"
+        if: ${{ matrix.ghc-version == '8.10.7' }}
 
       - name: Set up GHC ${{ matrix.ghc-version }}
         uses: haskell-actions/setup@v2
@@ -68,4 +75,5 @@ jobs:
 
       - name: Build documentation
         run: cabal haddock all
+
 
