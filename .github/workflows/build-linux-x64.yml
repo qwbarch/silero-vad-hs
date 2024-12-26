@@ -68,9 +68,3 @@ jobs:
 
       - name: Build documentation
         run: cabal haddock all
-      - name: Upload test logs
-        if: failure()
-        uses: actions/upload-artifact@v4.5.0
-        with:
-          name: test-logs
-          path: dist-newstyle/build/x86_64-linux/ghc-9.2.8/silero-vad-0.1.0.0/t/test/test/silero-vad-0.1.0.0-test.log

@@ -103,7 +103,7 @@ withApi :: (MonadUnliftIO m) => (FunPtr () -> m a) -> m a
 withApi runApi =
   bracket
     (liftIO $ flip dlopen [RTLD_NOW] =<< getDataFileName libraryPath)
-    (liftIO . dlclose)
+    (\_ -> pure ()) -- (liftIO . dlclose)
     (runApi <=< liftIO . flip dlsym "OrtGetApiBase")
 
 #else
