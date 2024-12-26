@@ -1,6 +1,6 @@
 name: silero-vad
 version: 0.1.0.0
-tested-with: GHC == 9.2.8
+tested-with: GHC == 9.8, GHC == 9.2.8, GHC == 8.10.7
 license: MIT
 license-file: LICENSE
 author: qwbarch

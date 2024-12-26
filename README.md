@@ -6,6 +6,8 @@ Voice activity detection powered by SileroVAD.
 
 ## Supported architectures
 
+Tested on ``GHC 9.8``, ``GHC 9.2.8``, and ``GHC 8.10.7``.
+
 - [![build-linux-x64](https://github.com/qwbarch/silero-vad-hs/actions/workflows/linux-x64.yml/badge.svg)](https://github.com/qwbarch/silero-vad-hs/actions/workflows/linux-x64.yml)
 - [![build-mac-arm64](https://github.com/qwbarch/silero-vad-hs/actions/workflows/mac-arm64.yml/badge.svg)](https://github.com/qwbarch/silero-vad-hs/actions/workflows/mac-arm64.yml)
 - [![build-mac-x64](https://github.com/qwbarch/silero-vad-hs/actions/workflows/mac-x64.yml/badge.svg)](https://github.com/qwbarch/silero-vad-hs/actions/workflows/mac-x64.yml)
@@ -50,11 +52,19 @@ Use ``detectSegments`` to detect the start/end times of voice activity segments.
   withVad $ \vad -> do
     segments <- detectSegments vad samples
     print segments
-  pure ()
 ```
-Alternatively, use ``detectSpeech`` if you want to detect if speech is found in a single window:
+Alternatively, use ``detectSpeech`` if you want to detect if speech is found in a single window.  
 ```haskell
   withModel $ \model -> do
     probability <- detectSpeech model $ Vector.take windowLength samples
     putStrLn $ "Probability: " <> show probability
 ```
+
+> [!NOTE]
+> Audio passed to ``detectSegments`` and ``detectSpeech`` functions have the following requirements:
+> - Must be 16khz sample rate.
+> - Must be mono channel.
+> - Must be 16-bit audio.
+>
+> When using ``detectSpeech``, audio samples must be of size ``windowLength`` (defined as 512).
+> If ``length samples /= windowLength``, the probability will always be 0.
