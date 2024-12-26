@@ -1,7 +1,7 @@
 #ifndef SILERO_MODEL_H
 #define SILERO_MODEL_H
 
-#include "../../lib/onnxruntime/linux-x64/include/onnxruntime_c_api.h"
+#include "../../lib/onnxruntime/onnxruntime_c_api.h"
 
 #define WINDOW_LENGTH 512
 #define WINDOW_BYTES WINDOW_LENGTH * sizeof(float)

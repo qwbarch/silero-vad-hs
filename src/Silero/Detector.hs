@@ -2,7 +2,7 @@ module Silero.Detector (
   VoiceDetector (..),
   SpeechSegment (..),
   detectSegments,
-  createVad,
+  defaultVad,
   withVad,
 ) where
 
@@ -35,14 +35,14 @@ data VoiceDetector = VoiceDetector
 -- |
 -- Create a **VoiceDetector**.
 -- **Warning: SileroModel holds internal state and is NOT thread safe.**
-createVad :: SileroModel -> VoiceDetector
-createVad model =
+defaultVad :: SileroModel -> VoiceDetector
+defaultVad model =
   VoiceDetector
     { model = model
     , startThreshold = 0.5
     , endThreshold = 0.35
     , minSpeechSamples = fromIntegral sampleRate / 1000.0 * 250.0 -- 250ms.
-    , maxSpeechSamples = 1.0 / 0.0
+    , maxSpeechSamples = 1.0 / 0.0 -- Infinity.
     , speechPadSamples = fromIntegral sampleRate / 1000.0 * 30.0 -- 30ms.
     , minSilenceSamples = fromIntegral sampleRate / 1000.0 * 100.0 -- 100ms.
     , minSilenceSamplesAtMaxSpeech = fromIntegral sampleRate / 1000.0 * 98.0 -- 98ms
@@ -52,7 +52,7 @@ createVad model =
 -- Create a **VoiceDetector**.
 -- **Warning: SileroModel holds internal state and is NOT thread safe.**
 withVad :: (MonadUnliftIO m) => (VoiceDetector -> m a) -> m a
-withVad runVad = withModel (runVad . createVad)
+withVad runVad = withModel (runVad . defaultVad)
 
 data SpeechSegment = SpeechSegment
   { startIndex :: Int32

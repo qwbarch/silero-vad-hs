@@ -20,16 +20,18 @@ import UnliftIO (MonadIO (liftIO), MonadUnliftIO, bracket)
 
 #if defined (linux_HOST_OS) || defined (darwin_HOST_OS)
 
-import System.Posix (RTLDFlags (RTLD_NOW), dlopen, dlsym)
+import System.Posix (RTLDFlags (RTLD_NOW), dlsym, dlopen, dlclose)
 import Foreign (FunPtr, Ptr, castPtr)
 import Foreign.C (CString, withCString)
+import Control.Monad ((<=<))
 
 #else
 
 
-import System.Win32 (getProcAddress, loadLibrary)
+import System.Win32 (getProcAddress, loadLibrary, freeLibrary)
 import Foreign (FunPtr, Ptr, castPtr, castPtrToFunPtr)
 import Foreign.C (CWString, withCWString)
+import Control.Monad ((<=<))
 
 #endif
 
@@ -78,42 +80,44 @@ instance Storable SileroModel where
 libraryPath :: FilePath
 #if defined(linux_HOST_OS)
 
-libraryPath = "lib/onnxruntime/linux-x64/lib/libonnxruntime.so"
+libraryPath = "lib/onnxruntime/linux-x64/libonnxruntime.so"
 
-#elif defined(darwin_HOST_OS)
-  #if defined(aarch64_HOST_ARCH)
+#elif defined(darwin_HOST_OS) && defined(aarch64_HOST_ARCH)
 
-  libraryPath = "lib/onnxruntime/osx-arm64/lib/libonnxruntime.dylib"
+libraryPath = "lib/onnxruntime/mac-arm64/libonnxruntime.dylib"
 
-  #else
+#elif defined(darwin_HOST_OS) && !defined(aarch64_HOST_ARCH)
 
-  libraryPath = "lib/onnxruntime/osx-x64/lib/libonnxruntime.dylib"
-
-  #endif
+libraryPath = "lib/onnxruntime/mac-x64/libonnxruntime.dylib"
 
 #else
 
-libraryPath = "lib/onnxruntime/windows-x64/lib/onnxruntime.dll"
+libraryPath = "lib/onnxruntime/windows-x64/onnxruntime.dll"
 
 #endif
 
-loadApi :: IO (FunPtr ())
+withApi :: (MonadUnliftIO m) => (FunPtr () -> m a) -> m a
 #if defined (linux_HOST_OS) || defined (darwin_HOST_OS)
 
-loadApi = do
-  dl <- flip dlopen [RTLD_NOW] =<< getDataFileName libraryPath
-  dlsym dl "OrtGetApiBase"
+
+withApi runApi =
+  bracket
+    (liftIO $ flip dlopen [RTLD_NOW] =<< getDataFileName libraryPath)
+    (liftIO . dlclose)
+    (runApi <=< liftIO . flip dlsym "OrtGetApiBase")
 
 #else
 
-loadApi = do
-  library <- loadLibrary =<< getDataFileName libraryPath
-  castPtrToFunPtr <$> getProcAddress library "OrtGetApiBase"
+withApi runApi = do
+  bracket
+    (liftIO $ loadLibrary =<< getDataFileName libraryPath)
+    (liftIO . freeLibrary)
+    ((runApi . castPtrToFunPtr) <=< (liftIO . flip getProcAddress "OrtGetApiBase"))
 
 #endif
 
 getModelPath :: IO String
-getModelPath = getDataFileName "lib/silero-vad/silero_vad.onnx"
+getModelPath = getDataFileName "lib/silero_vad.onnx"
 
 #if defined (linux_HOST_OS) || defined (darwin_HOST_OS)
 
@@ -131,22 +135,16 @@ withModelPath runModelPath = do
 
 #endif
 
-loadModel :: IO SileroModel
-loadModel = do
-  api <- loadApi
-  vad <- withModelPath $ c_load_model api
-  return $ SileroModel vad
-
--- | Reset the internal state of the model. This should be called when giving fresh audio samples.
-releaseModel :: SileroModel -> IO ()
-releaseModel = c_release_model . api
-
+-- | **Warning: SileroModel holds internal state and is NOT thread safe.**
 withModel :: (MonadUnliftIO m) => (SileroModel -> m a) -> m a
-withModel =
-  bracket
-    (liftIO loadModel)
-    (liftIO . releaseModel)
+withModel runModel = do
+  withApi $ \api' -> do
+    bracket
+      (SileroModel <$> liftIO (withModelPath $ c_load_model api'))
+      (liftIO . c_release_model . api)
+      runModel
 
+-- | **Warning: SileroModel holds internal state and is NOT thread safe.**
 resetModel :: (MonadIO m) => SileroModel -> m ()
 resetModel = liftIO . c_reset_model . api
 
@@ -157,6 +155,8 @@ resetModel = liftIO . c_reset_model . api
 -- - Must be mono-channel.
 -- - Must be 16-bit audio.
 -- - Must contain exactly 512 samples.
+--
+-- | **Warning: SileroModel holds internal state and is NOT thread safe.**
 detectSpeech :: (MonadIO m) => SileroModel -> Vector Float -> m Float
 detectSpeech (SileroModel api) samples
   | Vector.length samples /= windowSize =

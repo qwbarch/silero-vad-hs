@@ -1,13 +1,27 @@
 name: silero-vad
 version: 0.1.0.0
 tested-with: GHC == 9.2.8
+license: MIT
+license-file: LICENSE
+author: qwbarch
+maintainer: qwbarch <qwbarch@gmail.com>
+category: Audio, Sound
+homepage: https://github.com/qwbarch/silero-vad-hs
+bug-reports: https://github.com/qwbarch/silero-vad-hs/issues
+extra-doc-files: CHANGELOG.md
+
+synopsis: Voice activity detection powered by SileroVAD.
+description: A haskell implentation of SileroVAD, a pre-trained enterprise-grade voice activity detector.
 
 include-dirs: cbits
 c-sources: cbits/**/*
 cc-options: -Wno-unused-result
 data-files:
-  - lib/onnxruntime/linux-x64/lib/libonnxruntime.so
-  - lib/silero-vad/silero_vad.onnx
+  - lib/onnxruntime/linux-x64/libonnxruntime.so
+  - lib/onnxruntime/mac-x64/libonnxruntime.dylib
+  - lib/onnxruntime/mac-arm64/libonnxruntime.dylib
+  - lib/onnxruntime/windows-x64/onnxruntime.dll
+  - lib/silero_vad.onnx
   - lib/jfk.wav
 
 library:
@@ -20,19 +34,18 @@ tests:
       - src
       - test
     dependencies:
-      - tasty
-      - tasty-hunit
-      - WAVE
-
-ghc-options:
-  -threaded
-  -rtsopts
-  -with-rtsopts=-N
-  -O2
-  -flate-specialise
-  -fspecialise-aggressively
-  -Wall
-  -Wno-name-shadowing
+      - tasty > 1 && < 2
+      - tasty-hunit > 0.10 && < 1
+      - WAVE ^>= 0.1
+    ghc-options:
+      -threaded
+      -rtsopts
+      -with-rtsopts=-N
+      -O2
+      -flate-specialise
+      -fspecialise-aggressively
+      -Wall
+      -Wno-name-shadowing
 
 default-extensions:
   - DataKinds
@@ -68,7 +81,7 @@ dependencies:
 when:
   - condition: os(linux) || os(darwin)
     dependencies:
-      - unix
+      - unix == 2.*
   - condition: os(windows)
     dependencies:
-      - Win32
+      - Win32 == 2.*
