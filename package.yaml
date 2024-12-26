@@ -1,5 +1,5 @@
 name: silero-vad
-version: 0.1.0.3
+version: 0.1.0.4
 tested-with: GHC == 9.8, GHC == 9.2.8, GHC == 8.10.7
 license: MIT
 license-file: LICENSE
@@ -17,10 +17,16 @@ description: A haskell implentation of SileroVAD, a pre-trained enterprise-grade
 
 include-dirs:
   - cbits
-  - cbits/silero
-  - lib/onnxruntime
+  - lib
 c-sources: cbits/**/*.c
-cc-options: -Wno-unused-result
+extra-source-files:
+  - cbits/**/*
+  - lib/**/*.h
+  - lib/onnxruntime/linux-x64/libonnxruntime.so
+  - lib/onnxruntime/mac-x64/libonnxruntime.dylib
+  - lib/onnxruntime/mac-arm64/libonnxruntime.dylib
+  - lib/onnxruntime/windows-x64/onnxruntime.dll
+  - lib/silero_vad.onnx
 data-files:
   - lib/onnxruntime/linux-x64/libonnxruntime.so
   - lib/onnxruntime/mac-x64/libonnxruntime.dylib
@@ -28,6 +34,7 @@ data-files:
   - lib/onnxruntime/windows-x64/onnxruntime.dll
   - lib/silero_vad.onnx
   - lib/jfk.wav
+cc-options: -Wno-unused-result
 
 flags:
   build-readme:
