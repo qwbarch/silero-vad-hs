@@ -8,7 +8,7 @@ import qualified Data.Vector.Storable as Vector
 import Data.WAVE (WAVE (..), getWAVEFile, sampleToDouble)
 import Paths_silero_vad (getDataFileName)
 import Silero.Detector (SpeechSegment (..), detectSegments, withVad)
-import Silero.Model (detectSpeech, windowSize, withModel)
+import Silero.Model (detectSpeech, windowLength, withModel)
 import Test.Tasty (defaultMain, testGroup)
 import Test.Tasty.HUnit (testCase, (@?=))
 
@@ -64,6 +64,6 @@ main = defaultMain $ testGroup "silero-vad" testTree
           let test actual expected =
                 join $ liftA2 (@?=) (detectSpeech model actual) (pure expected)
           test [] 0.0
-          test (Vector.replicate (windowSize - 1) 1.0) 0.0
-          test (Vector.replicate (windowSize + 1) -1.0) 0.0
+          test (Vector.replicate (windowLength - 1) 1.0) 0.0
+          test (Vector.replicate (windowLength + 1) -1.0) 0.0
       ]
