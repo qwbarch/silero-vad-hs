@@ -14,24 +14,22 @@ import Data.Vector.Storable (Vector)
 import qualified Data.Vector.Storable as Vector
 import Foreign.Storable (Storable (..))
 import GHC.Generics (Generic)
-import GHC.IO (unsafeDupablePerformIO)
+import GHC.IO (unsafeDupablePerformIO, unsafePerformIO)
 import Paths_silero_vad (getDataFileName)
 import UnliftIO (MonadIO (liftIO), MonadUnliftIO, bracket)
 
 #if defined (linux_HOST_OS) || defined (darwin_HOST_OS)
 
-import System.Posix (RTLDFlags (RTLD_NOW), dlsym, dlopen, dlclose)
+import System.Posix (RTLDFlags (RTLD_NOW), dlsym, dlopen )
 import Foreign (FunPtr, Ptr, castPtr)
 import Foreign.C (CString, withCString)
-import Control.Monad ((<=<))
 
 #else
 
 
-import System.Win32 (getProcAddress, loadLibrary, freeLibrary)
+import System.Win32 (getProcAddress, loadLibrary)
 import Foreign (FunPtr, Ptr, castPtr, castPtrToFunPtr)
 import Foreign.C (CWString, withCWString)
-import Control.Monad ((<=<))
 
 #endif
 
@@ -96,23 +94,23 @@ libraryPath = "lib/onnxruntime/windows-x64/onnxruntime.dll"
 
 #endif
 
-withApi :: (MonadUnliftIO m) => (FunPtr () -> m a) -> m a
+{-# NOINLINE onnxruntime #-}
+onnxruntime :: FunPtr ()
 #if defined (linux_HOST_OS) || defined (darwin_HOST_OS)
 
-
-withApi runApi =
-  bracket
-    (liftIO $ flip dlopen [RTLD_NOW] =<< getDataFileName libraryPath)
-    (\_ -> pure ()) -- (liftIO . dlclose)
-    (runApi <=< liftIO . flip dlsym "OrtGetApiBase")
+onnxruntime =
+  unsafePerformIO $
+    getDataFileName libraryPath
+      >>= flip dlopen [RTLD_NOW]
+      >>= (liftIO . flip dlsym "OrtGetApiBase")
 
 #else
 
-withApi runApi = do
-  bracket
-    (liftIO $ loadLibrary =<< getDataFileName libraryPath)
-    (liftIO . freeLibrary)
-    ((runApi . castPtrToFunPtr) <=< (liftIO . flip getProcAddress "OrtGetApiBase"))
+onnxruntime =
+  unsafePerformIO $
+    getDataFileName libraryPath
+      >>= loadLibrary
+      >>= (fmap castPtrToFunPtr . flip getProcAddress "OrtGetApiBase")
 
 #endif
 
@@ -138,11 +136,10 @@ withModelPath runModelPath = do
 -- | **Warning: SileroModel holds internal state and is NOT thread safe.**
 withModel :: (MonadUnliftIO m) => (SileroModel -> m a) -> m a
 withModel runModel = do
-  withApi $ \api' -> do
-    bracket
-      (SileroModel <$> liftIO (withModelPath $ c_load_model api'))
-      (liftIO . c_release_model . api)
-      runModel
+  bracket
+    (SileroModel <$> liftIO (withModelPath $ c_load_model onnxruntime))
+    (liftIO . c_release_model . api)
+    runModel
 
 -- | **Warning: SileroModel holds internal state and is NOT thread safe.**
 resetModel :: (MonadIO m) => SileroModel -> m ()
