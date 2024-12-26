@@ -1,7 +1,7 @@
 #ifndef SILERO_MODEL_H
 #define SILERO_MODEL_H
 
-#include "../../lib/onnxruntime/include/onnxruntime_c_api.h"
+#include "../../lib/onnxruntime/linux-x64/include/onnxruntime_c_api.h"
 
 #define WINDOW_LENGTH 512
 #define WINDOW_BYTES WINDOW_LENGTH * sizeof(float)
@@ -11,7 +11,8 @@
 int64_t get_window_length();
 int64_t get_sample_rate();
 
-struct SileroModel {
+struct SileroModel
+{
   const struct OrtApi *api;
   OrtEnv *env;
   OrtSessionOptions *session_options;

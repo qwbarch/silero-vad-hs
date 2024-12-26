@@ -12,13 +12,14 @@ module Silero.Model (
 import Data.Int (Int64)
 import Data.Vector.Storable (Vector)
 import qualified Data.Vector.Storable as Vector
-import Foreign (FunPtr, Ptr, Storable, castPtr)
-import Foreign.C (CString, withCString)
+import Foreign (FunPtr, Ptr, Storable, castPtr, castPtrToFunPtr)
+import Foreign.C (withCWString, CWString)
 import Foreign.Storable (Storable (..))
 import GHC.Generics (Generic)
 import GHC.IO (unsafeDupablePerformIO)
 import Paths_silero_vad (getDataFileName)
 import UnliftIO (MonadIO (liftIO), MonadUnliftIO, bracket)
+import System.Win32 (loadLibrary, getProcAddress)
 
 #if defined (linux_HOST_OS) || defined (darwin_HOST_OS)
 
@@ -30,7 +31,7 @@ foreign import ccall "model.h get_window_length" c_get_window_length :: IO Int64
 
 foreign import ccall "model.h get_sample_rate" c_get_sample_rate :: IO Int64
 
-foreign import ccall "model.h load_model" c_load_model :: FunPtr () -> CString -> IO (Ptr ())
+foreign import ccall "model.h load_model" c_load_model :: FunPtr () -> CWString -> IO (Ptr ())
 
 foreign import ccall "model.h release_model" c_release_model :: Ptr () -> IO ()
 
@@ -87,19 +88,26 @@ libraryPath = "lib/onnxruntime/windows-x64/lib/onnxruntime.dll"
 
 #if defined (linux_HOST_OS) || defined (darwin_HOST_OS)
 
-loadLibrary :: IO (FunPtr ())
-loadLibrary = do
+loadApi :: IO (FunPtr ())
+loadApi = do
   dl <- flip dlopen [RTLD_NOW] =<< getDataFileName libraryPath
   dlsym dl "OrtGetApiBase"
+
+#else
+
+loadApi :: IO (FunPtr ())
+loadApi = do
+  library <- loadLibrary =<< getDataFileName libraryPath
+  castPtrToFunPtr <$> getProcAddress library "OrtGetApiBase"
 
 #endif
 
 loadModel :: IO SileroModel
 loadModel = do
-  api <- loadLibrary
+  api <- loadApi
   modelPath <- getDataFileName "lib/silero-vad/silero_vad.onnx"
   vad <-
-    withCString modelPath $
+    withCWString modelPath $
       c_load_model api
   return $ SileroModel vad
 
