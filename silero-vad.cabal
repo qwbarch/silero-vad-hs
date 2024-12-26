@@ -5,7 +5,7 @@ cabal-version: 1.18
 -- see: https://github.com/sol/hpack
 
 name:           silero-vad
-version:        0.1.0.2
+version:        0.1.0.3
 synopsis:       Voice activity detection powered by SileroVAD.
 description:    A haskell implentation of SileroVAD, a pre-trained enterprise-grade voice activity detector.
 category:       Audio, Sound
