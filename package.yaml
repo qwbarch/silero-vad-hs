@@ -15,7 +15,9 @@ extra-doc-files:
 synopsis: Voice activity detection powered by SileroVAD.
 description: A haskell implentation of SileroVAD, a pre-trained enterprise-grade voice activity detector.
 
-include-dirs: cbits
+include-dirs:
+  - cbits
+  - lib
 c-sources: cbits/**/*.c
 cc-options: -Wno-unused-result
 data-files:

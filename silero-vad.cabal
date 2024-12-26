@@ -125,6 +125,7 @@ executable readme
   cc-options: -Wno-unused-result
   include-dirs:
       cbits
+      lib
   c-sources:
       cbits/silero/detector.c
       cbits/silero/model.c
