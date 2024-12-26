@@ -8,7 +8,9 @@ maintainer: qwbarch <qwbarch@gmail.com>
 category: Audio, Sound
 homepage: https://github.com/qwbarch/silero-vad-hs
 bug-reports: https://github.com/qwbarch/silero-vad-hs/issues
-extra-doc-files: CHANGELOG.md
+extra-doc-files:
+  - README.md
+  - CHANGELOG.md
 
 synopsis: Voice activity detection powered by SileroVAD.
 description: A haskell implentation of SileroVAD, a pre-trained enterprise-grade voice activity detector.
@@ -69,7 +71,6 @@ tests:
       -threaded
       -rtsopts
       -with-rtsopts=-N
-      -O2
       -flate-specialise
       -fspecialise-aggressively
       -Wall

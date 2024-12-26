@@ -19,6 +19,7 @@ build-type:     Simple
 tested-with:
     GHC == 9.8, GHC == 9.2.8, GHC == 8.10.7
 extra-doc-files:
+    README.md
     CHANGELOG.md
 data-files:
     lib/onnxruntime/linux-x64/libonnxruntime.so
@@ -187,7 +188,7 @@ test-suite test
       TemplateHaskell
       TypeApplications
       TypeOperators
-  ghc-options: -threaded -rtsopts -with-rtsopts=-N -O2 -flate-specialise -fspecialise-aggressively -Wall -Wno-name-shadowing
+  ghc-options: -threaded -rtsopts -with-rtsopts=-N -flate-specialise -fspecialise-aggressively -Wall -Wno-name-shadowing
   cc-options: -Wno-unused-result
   include-dirs:
       cbits
