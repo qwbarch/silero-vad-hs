@@ -2,7 +2,7 @@
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](https://opensource.org/licenses/MIT) [![Hackage](http://img.shields.io/hackage/v/silero-vad.svg)](https://hackage.haskell.org/package/silero-vad)
 
-Voice activity detection powered by SileroVAD.
+Voice activity detection powered by [SileroVAD](https://github.com/snakers4/silero-vad).
 
 ## Supported architectures
 
