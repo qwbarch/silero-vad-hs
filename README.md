@@ -66,5 +66,5 @@ Alternatively, use ``detectSpeech`` if you want to detect if speech is found in 
 > - Must be mono channel.
 > - Must be 16-bit audio.
 >
-> When using ``detectSpeech``, audio samples must be of size ``windowLength`` (defined as 512).
+> When using ``detectSpeech``, audio samples must be of size ``windowLength`` (defined as 512).  
 > If ``length samples /= windowLength``, the probability will always be 0.
