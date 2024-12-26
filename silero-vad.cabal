@@ -70,7 +70,8 @@ library
   cc-options: -Wno-unused-result
   include-dirs:
       cbits
-      lib
+      cbits/silero
+      lib/onnxruntime
   c-sources:
       cbits/silero/detector.c
       cbits/silero/model.c
@@ -126,7 +127,8 @@ executable readme
   cc-options: -Wno-unused-result
   include-dirs:
       cbits
-      lib
+      cbits/silero
+      lib/onnxruntime
   c-sources:
       cbits/silero/detector.c
       cbits/silero/model.c
@@ -188,7 +190,8 @@ test-suite test
   cc-options: -Wno-unused-result
   include-dirs:
       cbits
-      lib
+      cbits/silero
+      lib/onnxruntime
   c-sources:
       cbits/silero/detector.c
       cbits/silero/model.c

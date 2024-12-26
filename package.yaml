@@ -17,7 +17,8 @@ description: A haskell implentation of SileroVAD, a pre-trained enterprise-grade
 
 include-dirs:
   - cbits
-  - lib
+  - cbits/silero
+  - lib/onnxruntime
 c-sources: cbits/**/*.c
 cc-options: -Wno-unused-result
 data-files:
