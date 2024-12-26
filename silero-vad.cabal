@@ -5,7 +5,7 @@ cabal-version: 1.18
 -- see: https://github.com/sol/hpack
 
 name:           silero-vad
-version:        0.1.0.0
+version:        0.1.0.1
 synopsis:       Voice activity detection powered by SileroVAD.
 description:    A haskell implentation of SileroVAD, a pre-trained enterprise-grade voice activity detector.
 category:       Audio, Sound
@@ -72,11 +72,8 @@ library
       cbits
   c-sources:
       cbits/silero/detector.c
-      cbits/silero/detector.h
       cbits/silero/model.c
-      cbits/silero/model.h
       cbits/vec.c
-      cbits/vec.h
   build-depends:
       base >=4.14.3.0 && <5
     , derive-storable >=0.3.0.0 && <1
@@ -130,11 +127,8 @@ executable readme
       cbits
   c-sources:
       cbits/silero/detector.c
-      cbits/silero/detector.h
       cbits/silero/model.c
-      cbits/silero/model.h
       cbits/vec.c
-      cbits/vec.h
   build-tool-depends:
       markdown-unlit:markdown-unlit
   build-depends:
@@ -194,11 +188,8 @@ test-suite test
       cbits
   c-sources:
       cbits/silero/detector.c
-      cbits/silero/detector.h
       cbits/silero/model.c
-      cbits/silero/model.h
       cbits/vec.c
-      cbits/vec.h
   build-depends:
       WAVE ==0.1.*
     , base >=4.14.3.0 && <5

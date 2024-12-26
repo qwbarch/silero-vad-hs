@@ -1,5 +1,5 @@
 name: silero-vad
-version: 0.1.0.0
+version: 0.1.0.1
 tested-with: GHC == 9.8, GHC == 9.2.8, GHC == 8.10.7
 license: MIT
 license-file: LICENSE
@@ -16,7 +16,7 @@ synopsis: Voice activity detection powered by SileroVAD.
 description: A haskell implentation of SileroVAD, a pre-trained enterprise-grade voice activity detector.
 
 include-dirs: cbits
-c-sources: cbits/**/*
+c-sources: cbits/**/*.c
 cc-options: -Wno-unused-result
 data-files:
   - lib/onnxruntime/linux-x64/libonnxruntime.so
