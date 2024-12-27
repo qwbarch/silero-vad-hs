@@ -1,5 +1,5 @@
 name: silero-vad
-version: 0.1.0.4
+version: 0.1.0.5
 tested-with: GHC == 9.8, GHC == 9.2.8, GHC == 8.10.7
 license: MIT
 license-file: LICENSE
@@ -22,11 +22,6 @@ c-sources: cbits/**/*.c
 extra-source-files:
   - cbits/**/*
   - lib/**/*.h
-  - lib/onnxruntime/linux-x64/libonnxruntime.so
-  - lib/onnxruntime/mac-x64/libonnxruntime.dylib
-  - lib/onnxruntime/mac-arm64/libonnxruntime.dylib
-  - lib/onnxruntime/windows-x64/onnxruntime.dll
-  - lib/silero_vad.onnx
 data-files:
   - lib/onnxruntime/linux-x64/libonnxruntime.so
   - lib/onnxruntime/mac-x64/libonnxruntime.dylib

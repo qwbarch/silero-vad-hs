@@ -5,7 +5,7 @@ cabal-version: 1.18
 -- see: https://github.com/sol/hpack
 
 name:           silero-vad
-version:        0.1.0.4
+version:        0.1.0.5
 synopsis:       Voice activity detection powered by SileroVAD.
 description:    A haskell implentation of SileroVAD, a pre-trained enterprise-grade voice activity detector.
 category:       Audio, Sound
@@ -26,11 +26,6 @@ extra-source-files:
     cbits/vec.c
     cbits/vec.h
     lib/onnxruntime/onnxruntime_c_api.h
-    lib/onnxruntime/linux-x64/libonnxruntime.so
-    lib/onnxruntime/mac-x64/libonnxruntime.dylib
-    lib/onnxruntime/mac-arm64/libonnxruntime.dylib
-    lib/onnxruntime/windows-x64/onnxruntime.dll
-    lib/silero_vad.onnx
 extra-doc-files:
     README.md
     CHANGELOG.md
